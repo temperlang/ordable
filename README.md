@@ -15,6 +15,9 @@ compareNatural("file2", "file10"); // Negative: file2 comes first
 compareNaturalIgnoringCase("a", "B"); // Negative: a comes first
 ```
 
+Also: a [tour](demos/README.md) of the whole API in each language, with
+identical output.
+
 ## Rules
 
 - Runs of ASCII digits compare by value, at any length, without overflow.
@@ -51,6 +54,11 @@ Or on all of them:
 
     temper test -b cpp -b csharp -b java -b js -b lua -b py -b rust
 
-CI runs the tests on every backend for pull requests and pushes to `main`,
-using Temper's nightly `dev` build. Source files in `src/` are literate
-Markdown, with tests next to the code they cover.
+Run the tour in every language against `temper.out/`, checking each prints
+the same text (see [demos](demos/README.md)):
+
+    uv run demos/run.py
+
+CI runs the tests and the tour on every backend for pull requests and
+pushes to `main`, using Temper's nightly `dev` build. Source files in `src/`
+are literate Markdown, with tests next to the code they cover.
