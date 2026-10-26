@@ -91,9 +91,54 @@ def chunks(values: list[str], per_row: int, rows_per_chunk: int = 4) -> str:
     return "\n".join(calls)
 
 
+def digit_zero_lookup(zeros: list[int], c: int) -> int:
+    """The same search as `digitZero` in src/unicode.temper.md."""
+    if c < 0x660:
+        return 0x30 if 0x30 <= c <= 0x39 else -1
+    low, high = 0, len(zeros)
+    while high - low > 1:
+        middle = (low + high) // 2
+        if zeros[middle] <= c:
+            low = middle
+        else:
+            high = middle
+    return zeros[low] if c <= zeros[low] + 9 else -1
+
+
+def fold_lookup(flat: list[int], c: int) -> int:
+    """The same search as `foldCase` in src/unicode.temper.md."""
+    if c < 0x80:
+        return c + 32 if 0x41 <= c <= 0x5A else c
+    low, high = 0, len(flat) // 4
+    while high - low > 1:
+        middle = (low + high) // 2
+        if flat[middle * 4] <= c:
+            low = middle
+        else:
+            high = middle
+    start, count, stride, delta = flat[low * 4 : low * 4 + 4]
+    offset = c - start
+    if 0 <= offset < count * stride and (stride == 1 or offset & 1 == 0):
+        return c + delta
+    return c
+
+
+def check_lookups(zeros: list[int], runs: list[tuple[int, int, int, int]]) -> None:
+    """Checks the tables and the Temper code's searches, mirrored above,
+    against Python's Unicode data for every code point."""
+    flat = [n for run in runs for n in run]
+    for c in range(0x110000):
+        if 0xD800 <= c <= 0xDFFF:
+            continue
+        decimal = unicodedata.decimal(chr(c), None)
+        assert digit_zero_lookup(zeros, c) == (-1 if decimal is None else c - decimal), hex(c)
+        assert fold_lookup(flat, c) == simple_fold(c), hex(c)
+
+
 def main() -> None:
     zeros = digit_zeros()
     runs = fold_runs()
+    check_lookups(zeros, runs)
     fold_values = [
         f"0x{start:X}, {count}, {stride}, {delta}" for start, count, stride, delta in runs
     ]

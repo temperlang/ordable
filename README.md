@@ -43,10 +43,17 @@ so Ordable stays below 1.0 until that's decided.
 
 - **Done:** natural order with numbers of any length, a total order,
   sorting by key, decimal digits in any script, and Unicode case folding.
-- **Next:** compare with the usual tools (`Intl.Collator` with numeric
-  sorting, Python's `natsort`, Rust's natural-sort crates) and document
-  the differences. Then whatever makes Ordable the obvious choice: maybe
-  ordering options, with fantastic defaults.
+- **Compared** with the usual tools: see
+  [docs/comparisons.md](docs/comparisons.md).
+- **Next:** speed. A natural sort key (a string per input that sorts
+  naturally under plain string comparison), used automatically when
+  sorting big lists and also exposed, so Python can sort by key and
+  databases can `ORDER BY` it. Then the best defaults, smart and fast,
+  and options beside them: accents by base letter, `ß` as `ss` when
+  ignoring case, maybe signed and decimal numbers.
+- **A spec:** the source as a readable specification of the default
+  order and every option, with its tests beside it, and comparison
+  tables so people can choose well.
 - **Then:** a showcase page, where you paste lines and see natural order
   beside plain sorting, in every language.
 - **Before 1.0:** decide where Unicode tables live.
