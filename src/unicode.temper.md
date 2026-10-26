@@ -70,6 +70,59 @@ and the rest is a binary search over the runs in `foldRuns`.
       }
     }
 
+## Accents
+
+The letter under any accents on `c`, as `e` for `é` and `u` for `ǖ`, from
+canonical decompositions into a letter and combining marks. Others are
+their own base, including letters like `ø` that Unicode doesn't
+decompose.
+
+    let baseLetter(c: Int): Int {
+      if (c < 0xC0) {
+        return c;
+      }
+      let at = findEntry(basePairs, 2, c);
+      if (at >= 0) { basePairs[at + 1] } else { c }
+    }
+
+## Full Case Folding
+
+Full case folding, which can give more than one code point, as `ss` for
+`ß`, adds them to `units`. Others fold as `foldCase` does.
+
+    let addFullFold(units: ListBuilder<Int>, c: Int): Void {
+      if (c >= 0x80) {
+        let at = findEntry(fullFolds, 4, c);
+        if (at >= 0) {
+          for (var k = 1; k < 4; k += 1) {
+            let unit = fullFolds[at + k];
+            if (unit != 0) {
+              units.add(unit);
+            }
+          }
+          return;
+        }
+      }
+      units.add(foldCase(c));
+    }
+
+The start of the entry for `c` in a sorted table of `width` numbers per
+entry, the first being its key, or -1 if there's none.
+
+    let findEntry(table: List<Int>, width: Int, c: Int): Int {
+      var low = 0;
+      var high = (table.length / width) orelse panic();
+      while (high - low > 1) {
+        let middle = (low + high) / 2;
+        if (table[middle * width] <= c) {
+          low = middle;
+        } else {
+          high = middle;
+        }
+      }
+      if (high > 0 && table[low * width] == c) { low * width } else { -1 }
+    }
+
 ## Tests
 
     test("decimal digits") {
@@ -116,4 +169,23 @@ and the rest is a binary search over the runs in `foldRuns`.
       assert(foldCase(0x1E900) == 0x1E922);
       assert(foldCase(0x1E922) == 0x1E922);
       assert(foldCase(0x10FFFF) == 0x10FFFF);
+    }
+
+    test("base letters") {
+      assert(baseLetter(char'e') == char'e');
+      assert(baseLetter(0xE9) == char'e'); // é
+      assert(baseLetter(0xC9) == char'E'); // É keeps its case
+      assert(baseLetter(0x1D6) == char'u'); // ǖ, two marks deep
+      assert(baseLetter(0xF8) == 0xF8); // ø doesn't decompose
+      assert(baseLetter(0x3AC) == 0x3B1); // ά to α
+      assert(baseLetter(0x419) == 0x418); // Й to И
+    }
+
+    test("full case folding") {
+      let units = new ListBuilder<Int>();
+      addFullFold(units, 0xDF); // ß
+      addFullFold(units, 0x1E9E); // ẞ
+      addFullFold(units, char'A');
+      addFullFold(units, 0xFB01); // ﬁ
+      assert(units.toList().join(" ") { u => u.toString(16) } == "73 73 73 73 61 66 69");
     }

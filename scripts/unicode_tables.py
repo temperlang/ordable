@@ -74,6 +74,45 @@ def fold_runs() -> list[tuple[int, int, int, int]]:
     return runs
 
 
+def base_letter(c: int) -> int:
+    """The letter under any accents: canonical decompositions of a
+    character then combining marks (category Mn), followed down, as `é`
+    to `e` and `ǖ` to `u`. Characters that only decompose to another
+    single one, or not into marks, keep themselves."""
+    char = chr(c)
+    while True:
+        decomposition = unicodedata.decomposition(char)
+        if not decomposition or decomposition.startswith("<"):
+            return ord(char)
+        parts = [chr(int(code, 16)) for code in decomposition.split()]
+        if len(parts) < 2 or any(unicodedata.category(p) != "Mn" for p in parts[1:]):
+            return ord(char)
+        char = parts[0]
+
+
+def base_pairs() -> list[tuple[int, int]]:
+    pairs = [(c, base_letter(c)) for c in range(0x110000) if not 0xD800 <= c <= 0xDFFF]
+    pairs = [(c, b) for c, b in pairs if b != c]
+    assert dict(pairs)[0xE9] == 0x65 and dict(pairs)[0x1D6] == 0x75 and 0xF8 not in dict(pairs)
+    assert all(c >= 0xC0 for c, _ in pairs)
+    return pairs
+
+
+def full_folds() -> list[tuple[int, list[int]]]:
+    """Code points whose full case folding is more than one, as `ß` to
+    `ss`; at most three."""
+    folds = []
+    for c in range(0x110000):
+        if 0xD800 <= c <= 0xDFFF:
+            continue
+        full = chr(c).casefold()
+        if len(full) > 1:
+            assert len(full) <= 3
+            folds.append((c, [ord(f) for f in full]))
+    assert dict(folds)[0xDF] == [0x73, 0x73] and all(c >= 0x80 for c, _ in folds)
+    return folds
+
+
 def rows(values: list[str], per_row: int) -> str:
     lines = [", ".join(values[i : i + per_row]) for i in range(0, len(values), per_row)]
     return ",\n".join(f"      {line}" for line in lines)
@@ -123,22 +162,45 @@ def fold_lookup(flat: list[int], c: int) -> int:
     return c
 
 
-def check_lookups(zeros: list[int], runs: list[tuple[int, int, int, int]]) -> None:
+def pair_lookup(flat: list[int], width: int, c: int) -> int:
+    """The index of `c` in a sorted table of `width` numbers per entry, the
+    first being the key, or -1: the same search as `findEntry` in
+    src/unicode.temper.md."""
+    low, high = 0, len(flat) // width
+    while high - low > 1:
+        middle = (low + high) // 2
+        if flat[middle * width] <= c:
+            low = middle
+        else:
+            high = middle
+    return low * width if flat and flat[low * width] == c else -1
+
+
+def check_lookups(zeros, runs, bases, fulls) -> None:
     """Checks the tables and the Temper code's searches, mirrored above,
     against Python's Unicode data for every code point."""
     flat = [n for run in runs for n in run]
+    flat_bases = [n for pair in bases for n in pair]
+    flat_fulls = [n for c, units in fulls for n in [c] + units + [0] * (3 - len(units))]
     for c in range(0x110000):
         if 0xD800 <= c <= 0xDFFF:
             continue
         decimal = unicodedata.decimal(chr(c), None)
         assert digit_zero_lookup(zeros, c) == (-1 if decimal is None else c - decimal), hex(c)
         assert fold_lookup(flat, c) == simple_fold(c), hex(c)
+        at = pair_lookup(flat_bases, 2, c) if c >= 0xC0 else -1
+        assert (flat_bases[at + 1] if at >= 0 else c) == base_letter(c), hex(c)
+        at = pair_lookup(flat_fulls, 4, c) if c >= 0x80 else -1
+        units = [u for u in flat_fulls[at + 1 : at + 4] if u] if at >= 0 else [simple_fold(c)]
+        assert units == [ord(f) for f in chr(c).casefold()] or len(chr(c).casefold()) == 1, hex(c)
 
 
 def main() -> None:
     zeros = digit_zeros()
     runs = fold_runs()
-    check_lookups(zeros, runs)
+    bases = base_pairs()
+    fulls = full_folds()
+    check_lookups(zeros, runs, bases, fulls)
     fold_values = [
         f"0x{start:X}, {count}, {stride}, {delta}" for start, count, stride, delta in runs
     ]
@@ -168,6 +230,30 @@ some backends (Lua).
     let buildFoldRuns(): List<Int> {{
       let runs = new ListBuilder<Int>();
 {chunks(fold_values, 4)}
+      runs.toList()
+    }}
+
+Base letters, for comparing without accents: {len(bases)} pairs of a code
+point and the letter under its accents, from canonical decompositions
+into a letter and combining marks, in order. Others are their own base.
+
+    let basePairs: List<Int> = buildBasePairs();
+
+    let buildBasePairs(): List<Int> {{
+      let runs = new ListBuilder<Int>();
+{chunks([f"0x{c:X}, 0x{b:X}" for c, b in bases], 8)}
+      runs.toList()
+    }}
+
+Full case folding where it gives more than one code point, as `ß` to
+`ss`: {len(fulls)} entries of four numbers, a code point and then up to
+three, with 0 for none. Others fold as `foldCase` does.
+
+    let fullFolds: List<Int> = buildFullFolds();
+
+    let buildFullFolds(): List<Int> {{
+      let runs = new ListBuilder<Int>();
+{chunks([", ".join(f"0x{n:X}" for n in [c] + u + [0] * (3 - len(u))) for c, u in fulls], 4)}
       runs.toList()
     }}
 """)
