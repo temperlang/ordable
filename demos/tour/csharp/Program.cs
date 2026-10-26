@@ -22,7 +22,7 @@ Section("1. Comparing");
 
 // Negative means the first comes first, positive the second, and 0 only for
 // the same string.
-foreach (var (a, b) in new[] { ("file2", "file10"), ("x01", "x1"), ("1.9", "1.10"), ("a", "B"), ("file10", "file10") })
+foreach (var (a, b) in new[] { ("file2", "file10"), ("x01", "x1"), ("1.9", "1.10"), ("file٢", "file10"), ("a", "B"), ("file10", "file10") })
 {
     Console.WriteLine($"{a} vs {b}: {Order(CompareNatural(a, b))}");
 }

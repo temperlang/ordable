@@ -2,8 +2,9 @@
 
 People expect `file2` before `file10`, but comparing code points puts
 `file10` first, since `1` comes before `2`. Natural order fixes that by
-comparing each run of ASCII digits as a number, and everything else by code
-point.
+comparing each run of decimal digits as a number, and everything else by
+code point. Digits in any script count, such as Arabic-Indic `٢` or
+fullwidth `２`.
 
 ## Comparing
 
@@ -70,42 +71,50 @@ time. Numbers compare by value without converting them, so any number of
 digits works without overflow: after skipping leading zeros, more digits
 means bigger, and equal lengths compare digit by digit.
 
-Two things that don't change the main order are kept as tiebreaks, used
-only if everything else is equal: the first difference in leading zeros
-(fewer first, so `1` before `01`), and, when ignoring case, the first
-difference in case. That keeps the order total.
+A run of digits is all from one script, so `1٢` is two numbers. Runs in
+different scripts compare by value, so `٢` comes before `10`.
 
-Only ASCII digits and ASCII letters are special for now. Other decimal
-digits and Unicode case folding need tables that Temper doesn't have yet.
+Things that don't change the main order are kept as tiebreaks, used only
+if everything else is equal, in this order: the first difference in
+leading zeros (fewer first, so `1` before `01`), then in the digits'
+script (by code point, so `1` before `١`), and, when ignoring case, then
+in case. That keeps the order total.
+
+Case folding is ASCII only for now. Unicode case folding needs bigger
+tables, which might belong in a shared library instead
+([unicode](unicode.temper.md)).
 
     let compareWith(a: String, b: String, ignoreCase: Boolean): Int {
       var i = String.begin;
       var j = String.begin;
       var zeros = 0;
+      var scripts = 0;
       var cases = 0;
       while (a.hasIndex(i) && b.hasIndex(j)) {
         let x = a[i];
         let y = b[j];
-        if (isDigit(x) && isDigit(y)) {
+        let zeroA = digitZero(x);
+        let zeroB = digitZero(y);
+        if (zeroA >= 0 && zeroB >= 0) {
           var zerosA = 0;
-          while (a.hasIndex(i) && a[i] == char'0') {
+          while (a.hasIndex(i) && a[i] == zeroA) {
             zerosA += 1;
             i = a.next(i);
           }
           var zerosB = 0;
-          while (b.hasIndex(j) && b[j] == char'0') {
+          while (b.hasIndex(j) && b[j] == zeroB) {
             zerosB += 1;
             j = b.next(j);
           }
-          let endA = digitsEnd(a, i);
-          let endB = digitsEnd(b, j);
+          let endA = digitsEnd(a, i, zeroA);
+          let endB = digitsEnd(b, j, zeroB);
           let lengthA = a.countBetween(i, endA);
           let lengthB = b.countBetween(j, endB);
           if (lengthA != lengthB) {
             return sign(lengthA - lengthB);
           }
-          while (a.hasIndex(i) && isDigit(a[i])) {
-            let diff = a[i] - b[j];
+          while (a.hasIndex(i) && isDigitOf(a[i], zeroA)) {
+            let diff = (a[i] - zeroA) - (b[j] - zeroB);
             if (diff != 0) {
               return sign(diff);
             }
@@ -114,6 +123,9 @@ digits and Unicode case folding need tables that Temper doesn't have yet.
           }
           if (zeros == 0) {
             zeros = zerosA - zerosB;
+          }
+          if (scripts == 0) {
+            scripts = zeroA - zeroB;
           }
         } else {
           let diff = if (ignoreCase) { lowerAscii(x) - lowerAscii(y) } else { x - y };
@@ -133,16 +145,16 @@ digits and Unicode case folding need tables that Temper doesn't have yet.
         -1
       } else if (zeros != 0) {
         sign(zeros)
+      } else if (scripts != 0) {
+        sign(scripts)
       } else {
         sign(cases)
       }
     }
 
-    let isDigit(c: Int): Boolean { c >= char'0' && c <= char'9' }
-
-    let digitsEnd(s: String, start: StringIndex): StringIndex {
+    let digitsEnd(s: String, start: StringIndex, zero: Int): StringIndex {
       var i = start;
-      while (s.hasIndex(i) && isDigit(s[i])) {
+      while (s.hasIndex(i) && isDigitOf(s[i], zero)) {
         i = s.next(i);
       }
       i
@@ -203,6 +215,23 @@ digits and Unicode case folding need tables that Temper doesn't have yet.
       assertBeforeIgnoringCase(test, "A", "a");
       assertBeforeIgnoringCase(test, "File2", "file10");
       assert(compareNaturalIgnoringCase("Ab", "Ab") == 0);
+    }
+
+    test("digits in other scripts") { test =>
+      // Arabic-Indic ٢ and ١٠, Devanagari ९, fullwidth ２.
+      assertBefore(test, "file\u{662}", "file\u{661}\u{660}");
+      assertBefore(test, "file\u{662}", "file10");
+      assertBefore(test, "file2", "file\u{661}\u{660}");
+      assertBefore(test, "x\u{96F}", "x10");
+      assertBefore(test, "\u{FF12}", "\u{FF11}\u{FF10}");
+      // Leading zeros in their own script.
+      assertBefore(test, "\u{661}", "\u{660}\u{661}");
+      // One run per script: 1 then ٢, against 12.
+      assertBefore(test, "1\u{662}", "12");
+      // Same value: the script breaks the tie, after leading zeros.
+      assertBefore(test, "1", "\u{661}");
+      assertBefore(test, "\u{661}", "01");
+      assertBefore(test, "a\u{661}b", "a1c");
     }
 
     test("equal only when the same") { test =>

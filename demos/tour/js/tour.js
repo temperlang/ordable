@@ -24,7 +24,7 @@ section("1. Comparing");
 
 // Negative means the first comes first, positive the second, and 0 only for
 // the same string.
-for (const [a, b] of [["file2", "file10"], ["x01", "x1"], ["1.9", "1.10"], ["a", "B"], ["file10", "file10"]]) {
+for (const [a, b] of [["file2", "file10"], ["x01", "x1"], ["1.9", "1.10"], ["file٢", "file10"], ["a", "B"], ["file10", "file10"]]) {
   console.log(`${a} vs ${b}: ${order(compareNatural(a, b))}`);
 }
 

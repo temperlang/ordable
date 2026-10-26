@@ -23,7 +23,7 @@ section("1. Comparing")
 
 -- Negative means the first comes first, positive the second, and 0 only for
 -- the same string.
-for _, pair in ipairs({ { "file2", "file10" }, { "x01", "x1" }, { "1.9", "1.10" }, { "a", "B" }, { "file10", "file10" } }) do
+for _, pair in ipairs({ { "file2", "file10" }, { "x01", "x1" }, { "1.9", "1.10" }, { "file٢", "file10" }, { "a", "B" }, { "file10", "file10" } }) do
   print(pair[1] .. " vs " .. pair[2] .. ": " .. order(compareNatural(pair[1], pair[2])))
 end
 

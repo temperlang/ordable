@@ -41,6 +41,9 @@ struct Track {
 };
 
 int main() {
+  // Sets up Ordable's tables. Call it once before anything else.
+  ordable::global_init_init();
+
   std::cout << "# Ordable tour\n";
 
   section("1. Comparing");
@@ -48,7 +51,8 @@ int main() {
   // Negative means the first comes first, positive the second, and 0 only for
   // the same string.
   std::vector<std::pair<std::string, std::string>> pairs = {
-      {"file2", "file10"}, {"x01", "x1"}, {"1.9", "1.10"}, {"a", "B"}, {"file10", "file10"}};
+      {"file2", "file10"}, {"x01", "x1"}, {"1.9", "1.10"},
+      {"file٢", "file10"}, {"a", "B"}, {"file10", "file10"}};
   for (auto const &p : pairs) {
     std::cout << p.first << " vs " << p.second << ": " << order(compareNatural(p.first, p.second)) << "\n";
   }

@@ -33,13 +33,16 @@ struct Track {
 }
 
 fn main() {
+    // Sets up Ordable's tables. Call it once before anything else.
+    ordable::init(None).expect("ordable::init");
+
     println!("# Ordable tour");
 
     section("1. Comparing");
 
     // Negative means the first comes first, positive the second, and 0 only
     // for the same string.
-    for (a, b) in [("file2", "file10"), ("x01", "x1"), ("1.9", "1.10"), ("a", "B"), ("file10", "file10")] {
+    for (a, b) in [("file2", "file10"), ("x01", "x1"), ("1.9", "1.10"), ("file٢", "file10"), ("a", "B"), ("file10", "file10")] {
         println!("{a} vs {b}: {}", order(compare_natural(a, b)));
     }
 
