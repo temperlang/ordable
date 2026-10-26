@@ -60,6 +60,11 @@ public class Tour {
         // Natural keys sort by plain string comparison, as in a database.
         boolean before = naturalKey("file2").compareTo(naturalKey("file10")) < 0;
         System.out.println("natural keys, file2 before file10: " + (before ? "yes" : "no"));
+        // Keys are the same in every language, so they can be stored and shared.
+        String hex = naturalKey("file10").codePoints()
+            .mapToObj(c -> Integer.toHexString(c).toUpperCase())
+            .collect(java.util.stream.Collectors.joining(" "));
+        System.out.println("key for file10: " + hex);
 
         section("3. Sorting your own types");
 

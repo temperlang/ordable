@@ -60,3 +60,11 @@ In JavaScript, Ordable now sorts faster than the built-in `Intl.Collator`.
 In Python, most of the remaining time is generated code doing simple
 integer and string steps through helper calls, which Temper itself can
 make faster.
+
+A taste of more speed in Rust (2026-10-26): Temper's Rust output shares
+values with `Arc`, so they could cross threads. Converting a copy of
+Ordable's generated Rust to `Rc` by hand, timed against the same copy
+with `Arc`, alternately: `sortNatural` went from 26 to 14 ms, sorting by
+`compareNatural` from 37 to 30 ms, and 20,000 natural keys from 16 to
+8–11 ms. Temper may use `Rc` where values stay on one thread, once its
+model for threads is settled.

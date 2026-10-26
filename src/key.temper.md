@@ -13,6 +13,12 @@ Key code points are all below U+D800, where comparing UTF-16 code units
 all agree, and none is U+0000. A key is no shorter than its string and,
 with digits, a little longer.
 
+Keys are the same in every language, so they can be stored and shared,
+which makes their layout part of Ordable's API: once keys are stored,
+changing the layout would misorder them, so any change needs a new major
+version, or a new function beside these. The tour prints one, which
+checks that every language agrees.
+
     export let naturalKey(s: String): String { keyWith(s, false) }
 
     export let naturalKeyIgnoringCase(s: String): String { keyWith(s, true) }

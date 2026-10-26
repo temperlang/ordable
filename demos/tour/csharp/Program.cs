@@ -49,6 +49,8 @@ Console.WriteLine($"leading zeros: {string.Join(" ", SortNatural(new[] { "2", "0
 // Natural keys sort by plain string comparison, as in a database.
 var before = string.CompareOrdinal(NaturalKey("file2"), NaturalKey("file10")) < 0;
 Console.WriteLine($"natural keys, file2 before file10: {(before ? "yes" : "no")}");
+// Keys are the same in every language, so they can be stored and shared.
+Console.WriteLine($"key for file10: {string.Join(" ", NaturalKey("file10").Select(c => ((int)c).ToString("X")))}");
 
 Section("3. Sorting your own types");
 

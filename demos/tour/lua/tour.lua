@@ -47,6 +47,13 @@ print("leading zeros: " .. table.concat(sortNatural({ "2", "001", "1", "01" }), 
 
 -- Natural keys sort by plain string comparison, as in a database.
 print("natural keys, file2 before file10: " .. (ordable.naturalKey("file2") < ordable.naturalKey("file10") and "yes" or "no"))
+-- Keys are the same in every language, so they can be stored and shared.
+-- (This key is all ASCII, so its bytes are its code points.)
+local hex = {}
+for _, byte in ipairs({ ordable.naturalKey("file10"):byte(1, -1) }) do
+  hex[#hex + 1] = string.format("%X", byte)
+end
+print("key for file10: " .. table.concat(hex, " "))
 
 section("3. Sorting your own types")
 

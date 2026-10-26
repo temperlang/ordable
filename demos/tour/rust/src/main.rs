@@ -68,6 +68,9 @@ fn main() {
     // Natural keys sort by plain string comparison, as in a database.
     let before = natural_key("file2") < natural_key("file10");
     println!("natural keys, file2 before file10: {}", if before { "yes" } else { "no" });
+    // Keys are the same in every language, so they can be stored and shared.
+    let hex: Vec<String> = natural_key("file10").chars().map(|c| format!("{:X}", c as u32)).collect();
+    println!("key for file10: {}", hex.join(" "));
 
     section("3. Sorting your own types");
 

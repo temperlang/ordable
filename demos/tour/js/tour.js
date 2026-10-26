@@ -49,6 +49,9 @@ console.log(`leading zeros: ${sortNatural(["2", "001", "1", "01"]).join(" ")}`);
 
 // Natural keys sort by plain string comparison, as in a database.
 console.log(`natural keys, file2 before file10: ${naturalKey("file2") < naturalKey("file10") ? "yes" : "no"}`);
+// Keys are the same in every language, so they can be stored and shared.
+const hex = [...naturalKey("file10")].map((c) => c.codePointAt(0).toString(16).toUpperCase());
+console.log(`key for file10: ${hex.join(" ")}`);
 
 section("3. Sorting your own types");
 
