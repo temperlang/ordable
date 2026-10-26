@@ -6,6 +6,7 @@
 import static ordable.OrdableGlobal.compareNatural;
 import static ordable.OrdableGlobal.compareNaturalIgnoringCase;
 import static ordable.OrdableGlobal.sortNatural;
+import static ordable.OrdableGlobal.sortNaturalByKey;
 import static ordable.OrdableGlobal.sortNaturalIgnoringCase;
 
 import java.util.Comparator;
@@ -57,12 +58,19 @@ public class Tour {
 
         section("3. Sorting your own types");
 
-        // Sort with the language's own tools, using compareNatural to compare.
+        // sortNaturalByKey sorts any items by a string from each, made once each.
         List<Track> tracks = List.of(new Track("Track 10: Outro", 95), new Track("Track 1: Intro", 61), new Track("Track 2: Rise", 184));
-        List<Track> byTitle = tracks.stream().sorted(Comparator.comparing(Track::title, OrdableGlobal::compareNatural)).toList();
+        List<Track> byTitle = sortNaturalByKey(tracks, Track::title);
         System.out.println("tracks by title:");
         for (Track track : byTitle) {
             System.out.println("  " + track.title() + " (" + track.seconds() + " s)");
         }
+
+        // Or sort with the language's own tools, using compareNatural to compare.
+        List<String> own = tracks.stream()
+            .sorted(Comparator.comparing(Track::title, OrdableGlobal::compareNatural))
+            .map(Track::title)
+            .toList();
+        System.out.println("with the language's own sort: " + String.join(", ", own));
     }
 }

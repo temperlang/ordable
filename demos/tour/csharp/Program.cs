@@ -48,13 +48,17 @@ Console.WriteLine($"leading zeros: {string.Join(" ", SortNatural(new[] { "2", "0
 
 Section("3. Sorting your own types");
 
-// Sort with the language's own tools, using CompareNatural to compare.
+// SortNaturalByKey sorts any items by a string from each, made once each.
 var tracks = new[] { new Track("Track 10: Outro", 95), new Track("Track 1: Intro", 61), new Track("Track 2: Rise", 184) };
-var byTitle = tracks.OrderBy(t => t.Title, Comparer<string>.Create(CompareNatural));
+var byTitle = SortNaturalByKey(tracks, track => track.Title);
 Console.WriteLine("tracks by title:");
 foreach (var track in byTitle)
 {
     Console.WriteLine($"  {track.Title} ({track.Seconds} s)");
 }
+
+// Or sort with the language's own tools, using CompareNatural to compare.
+var own = tracks.OrderBy(track => track.Title, Comparer<string>.Create(CompareNatural));
+Console.WriteLine($"with the language's own sort: {string.Join(", ", own.Select(track => track.Title))}");
 
 record Track(string Title, int Seconds);

@@ -38,6 +38,31 @@ order that only matters for equal strings.
       strings.sorted { a, b => compareNaturalIgnoringCase(a, b) }
     }
 
+A sorted copy of any items, in the natural order of a string from each,
+such as files by name: `sortNaturalByKey(files) { file => file.name }`.
+Each key is made once, not once per comparison, so `key` can do some work.
+Items with the same key keep their order.
+
+    export let sortNaturalByKey<T>(items: List<T>, key: fn (T): String): List<T> {
+      sortByKeys(items, items.map(key), false)
+    }
+
+    export let sortNaturalByKeyIgnoringCase<T>(items: List<T>, key: fn (T): String): List<T> {
+      sortByKeys(items, items.map(key), true)
+    }
+
+Sorts positions by their keys, then picks the items in that order.
+
+    let sortByKeys<T>(items: List<T>, keys: List<String>, ignoreCase: Boolean): List<T> {
+      let positions = new ListBuilder<Int>();
+      for (var i = 0; i < items.length; i += 1) {
+        positions.add(i);
+      }
+      positions.toList()
+        .sorted { a, b => compareWith(keys[a], keys[b], ignoreCase) }
+        .map { i => items[i] }
+    }
+
 ## How It Works
 
 Both strings are walked together, a code point or a run of digits at a
@@ -193,4 +218,32 @@ digits and Unicode case folding need tables that Temper doesn't have yet.
       assert(sorted.join(" ") { s => s } == "IMG2.png img1.png img2.png img10.png img12.png");
       let ignoring = sortNaturalIgnoringCase(names);
       assert(ignoring.join(" ") { s => s } == "img1.png IMG2.png img2.png img10.png img12.png");
+    }
+
+    class Track(public title: String, public seconds: Int) {}
+
+    test("sorting by key") {
+      let tracks = [
+        new Track("Track 10: Outro", 95),
+        new Track("track 2: Rise", 184),
+        new Track("Track 1: Intro", 61),
+        new Track("Track 2: Rise again", 30),
+      ];
+      var calls = 0;
+      let titles = sortNaturalByKey(tracks) { track =>
+        calls += 1;
+        track.title
+      };
+      assert(calls == 4);
+      assert(titles.join(", ") { t => t.title } == "Track 1: Intro, Track 2: Rise again, Track 10: Outro, track 2: Rise");
+      let ignoring = sortNaturalByKeyIgnoringCase(tracks) { track => track.title };
+      assert(ignoring.join(", ") { t => t.title } == "Track 1: Intro, track 2: Rise, Track 2: Rise again, Track 10: Outro");
+    }
+
+Equal keys keep their order.
+
+    test("sorting by key is stable") {
+      let tracks = [new Track("b", 1), new Track("a", 2), new Track("b", 3), new Track("a", 4)];
+      let sorted = sortNaturalByKey(tracks) { track => track.title };
+      assert(sorted.join(" ") { t => t.seconds.toString() } == "2 4 1 3");
     }
