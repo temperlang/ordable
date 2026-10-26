@@ -1,0 +1,1105 @@
+/* Ordable's site. Colors are tokens, redefined for dark mode; the code,
+   playground and dev mode styles follow Chromarite's site. */
+
+:root {
+  --bg: #fafbfb;
+  --surface: #ffffff;
+  --text: #1a1f24;
+  --muted: #56606b;
+  --border: #dce1e5;
+  --accent: #0b7285;
+  --accent-2: #5f3dc4;
+  --code-bg: #f1f4f5;
+  --keyword: #8a2be2;
+  --string: #0f7a4a;
+  --number: #b0461a;
+  --comment: #6c7682;
+  --type: #1d5fa8;
+  --heading: var(--text);
+  /* Rows plain sorting misplaces, and rows Intl.Collator ties. */
+  --bad: #c2410c;
+  --bad-bg: #fff1e8;
+  --tie: #7048e8;
+  --tie-bg: #f3efff;
+  --good: #0b7a55;
+  --digits: #0b7285;
+  color-scheme: light dark;
+}
+
+/* Layout rules like `display: flex` would otherwise show hidden elements. */
+[hidden] {
+  display: none !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111518;
+    --surface: #181d21;
+    --text: #e6ebee;
+    --muted: #9eaab4;
+    --border: #2d353c;
+    --accent: #5ed3e6;
+    --accent-2: #b39dfa;
+    --code-bg: #1c2227;
+    --keyword: #c9a0ff;
+    --string: #7fd4a4;
+    --number: #f0a274;
+    --comment: #8b97a2;
+    --type: #8cc4ff;
+    --bad: #ff9d6b;
+    --bad-bg: #3a2218;
+    --tie: #b9a4ff;
+    --tie-bg: #2a2342;
+    --good: #6fdcae;
+    --digits: #5ed3e6;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.wrap {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+a {
+  color: var(--accent);
+}
+
+code,
+pre,
+textarea {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+code {
+  font-size: 0.92em;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+  color: var(--heading);
+}
+
+h2 {
+  margin-top: 3rem;
+}
+
+/* The hero: the name and lead beside a list that sorts itself. */
+.hero {
+  padding: 3rem 0 2.5rem;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--surface);
+  /* A strip of the two accents along the top. */
+  background-image: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background-size: 100% 6px;
+  background-repeat: no-repeat;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 17rem);
+  gap: 2rem 3rem;
+  align-items: center;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 3.6rem;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 3rem;
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  max-width: 40rem;
+  font-size: 1.25rem;
+  color: var(--muted);
+}
+
+.lead code {
+  color: var(--text);
+}
+
+.hero nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+}
+
+.hero-demo {
+  margin: 0;
+  padding: 0.75rem 0.85rem 0.85rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.06);
+}
+
+.hero-demo figcaption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+#hero-list.natural li {
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--border));
+}
+
+.replay {
+  width: 1.7rem;
+  height: 1.7rem;
+  padding: 0;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.replay:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Lists of rows, in the hero and the sort-off. Digits stand out. */
+ol.rows {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.88rem;
+}
+
+ol.rows li {
+  position: relative;
+  padding: 0.25rem 0.6rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow-wrap: anywhere;
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+ol.rows b {
+  font-weight: 700;
+  color: var(--digits);
+}
+
+/* The sort-off: a band like the hero's, with chips, controls and three
+   columns. */
+.sortoff {
+  padding: 1rem 0 2.5rem;
+  background: color-mix(in oklab, var(--accent) 5%, var(--bg));
+  border-bottom: 1px solid var(--border);
+}
+
+.sortoff h2 {
+  margin-top: 1.5rem;
+}
+
+.intro {
+  max-width: 46rem;
+  color: var(--muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chips button,
+.pill,
+.switch {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.2rem 0.8rem;
+  cursor: pointer;
+}
+
+.chips button:hover,
+.pill:hover,
+.switch:hover {
+  border-color: var(--accent);
+}
+
+.chips button[aria-pressed="true"] {
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 1rem 0 0.5rem;
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-left: 0.3rem;
+}
+
+.knob {
+  position: relative;
+  width: 2.1rem;
+  height: 1.2rem;
+  border-radius: 999px;
+  background: var(--border);
+  transition: background-color 0.2s;
+}
+
+.knob::after {
+  content: "";
+  position: absolute;
+  top: 0.15rem;
+  left: 0.15rem;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+  transition: transform 0.2s;
+}
+
+.switch[aria-checked="true"] .knob {
+  background: var(--accent);
+}
+
+.switch[aria-checked="true"] .knob::after {
+  transform: translateX(0.9rem);
+}
+
+.shuffle:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.edit-box {
+  display: grid;
+  gap: 0.3rem;
+  max-width: 28rem;
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.edit-box textarea {
+  font-size: 0.9rem;
+  padding: 0.5rem 0.7rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid color-mix(in oklab, var(--accent) 55%, var(--border));
+  border-radius: 8px;
+  resize: vertical;
+}
+
+.input-line {
+  margin: 0.5rem 0 1rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+#input-order {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.input-label {
+  font-weight: 600;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.col {
+  padding: 0.75rem;
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.col.ordable {
+  border: 2px solid var(--accent);
+  box-shadow: 0 8px 28px color-mix(in oklab, var(--accent) 18%, transparent);
+}
+
+.col-head {
+  min-height: 4.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.col h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.col.ordable h3 {
+  color: var(--accent);
+}
+
+.col-sub,
+.col-stat {
+  margin: 0.1rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  overflow-wrap: break-word;
+}
+
+.col-stat {
+  font-weight: 600;
+}
+
+.col-stat.bad {
+  color: var(--bad);
+}
+
+.col-stat.warn {
+  color: var(--tie);
+}
+
+#ordable-stat {
+  color: var(--good);
+}
+
+/* Ordable's rows are buttons, for the keys panel. */
+#rows-ordable li {
+  padding: 0;
+}
+
+#rows-ordable button {
+  display: block;
+  width: 100%;
+  padding: 0.25rem 0.6rem;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+#rows-ordable li:hover {
+  border-color: var(--accent);
+}
+
+#rows-ordable li.chosen {
+  background: color-mix(in oklab, var(--accent) 14%, var(--surface));
+  border-color: var(--accent);
+}
+
+ol.rows li.off {
+  background: var(--bad-bg);
+  border-color: color-mix(in oklab, var(--bad) 55%, var(--border));
+  box-shadow: inset 3px 0 0 var(--bad);
+}
+
+ol.rows li.tie {
+  background: var(--tie-bg);
+  border-color: color-mix(in oklab, var(--tie) 50%, var(--border));
+  padding-right: 1.6rem;
+}
+
+ol.rows li.tie::after {
+  content: "=";
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  transform: translateY(-50%);
+  font-weight: 700;
+  color: var(--tie);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.5rem;
+  margin: 0.9rem 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.mark-off,
+.mark-tie {
+  display: inline-grid;
+  place-items: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 4px;
+}
+
+.mark-off {
+  background: var(--bad-bg);
+  border: 1px solid var(--bad);
+  box-shadow: inset 3px 0 0 var(--bad);
+}
+
+.mark-tie {
+  margin-left: 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--tie);
+  background: var(--tie-bg);
+  border: 1px solid var(--tie);
+}
+
+.note {
+  min-height: 1.6em;
+  max-width: 48rem;
+  color: var(--muted);
+}
+
+/* Natural keys for the chosen row. */
+.keys {
+  margin-top: 1.5rem;
+  padding: 1rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.keys h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.keys-intro,
+.keys-db {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.keys-db {
+  margin-bottom: 0;
+}
+
+.key-pair {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  gap: 0.4rem 1rem;
+  margin: 0;
+}
+
+.key-pair dt {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.88rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.key-pair dd {
+  margin: 0;
+}
+
+.key {
+  display: block;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.82rem;
+  background: var(--code-bg);
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
+
+.sep {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-weight: 700;
+  color: var(--accent-2);
+}
+
+.checks {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0.75rem 0 0;
+  font-size: 0.9rem;
+  color: var(--good);
+}
+
+.checks span {
+  overflow-wrap: anywhere;
+}
+
+/* Phones: the hero stacks, and the columns get tighter. */
+@media (max-width: 720px) {
+  .hero {
+    padding-top: 2rem;
+  }
+
+  .hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hero-demo {
+    max-width: 22rem;
+  }
+
+  .columns {
+    gap: 0.4rem;
+  }
+
+  .col {
+    padding: 0.45rem;
+  }
+
+  .col-head {
+    min-height: 5.6rem;
+  }
+
+  .col h3 {
+    font-size: 0.9rem;
+  }
+
+  ol.rows {
+    font-size: 0.72rem;
+  }
+
+  ol.rows li,
+  #rows-ordable button {
+    padding: 0.2rem 0.35rem;
+  }
+
+  ol.rows li.tie {
+    padding-right: 1.1rem;
+  }
+
+  ol.rows li.tie::after {
+    right: 0.3rem;
+  }
+
+  .key-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ol.rows li,
+  .knob,
+  .knob::after {
+    transition: none;
+  }
+}
+
+.tabs button {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.15rem 0.7rem;
+  cursor: pointer;
+}
+
+.tabs button:hover {
+  border-color: var(--accent);
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.tabs button[aria-selected="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+
+.run {
+  color: var(--muted);
+  margin: 0.75rem 0 0.5rem;
+}
+
+pre.source {
+  margin-top: 0;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 0 8px 8px 8px;
+  padding: 1rem;
+  overflow: auto;
+  max-height: 36rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.tok-keyword {
+  color: var(--keyword);
+}
+
+.tok-string {
+  color: var(--string);
+}
+
+.tok-number {
+  color: var(--number);
+}
+
+.tok-type {
+  color: var(--type);
+}
+
+.tok-comment {
+  color: var(--comment);
+  font-style: italic;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The editor: highlighted code drawn behind a transparent textarea. Both
+   need the same font, size, padding and wrapping to line up. */
+/* Editable code looks like an input: the brighter surface and an accent
+   border. Read-only code keeps the tinted background and a thin border. */
+.editor {
+  position: relative;
+  background: var(--surface);
+  border: 2px solid color-mix(in oklab, var(--accent) 55%, var(--border));
+  border-radius: 0 8px 8px 8px;
+}
+
+.code-label {
+  display: inline-block;
+  padding: 0.1rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+}
+
+.code-label.editable {
+  color: var(--bg);
+  background: color-mix(in oklab, var(--accent) 55%, var(--border));
+  border: 0;
+}
+
+.editor pre,
+.editor textarea {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  letter-spacing: normal;
+  word-spacing: normal;
+  tab-size: 2;
+  white-space: pre;
+  border: 0;
+  /* Phones may enlarge text, and not always in both layers. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Not the smaller size other code gets, or the layers drift apart. */
+.editor pre code {
+  font: inherit;
+}
+
+.editor pre {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.editor textarea {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 8rem;
+  color: transparent;
+  caret-color: var(--text);
+  background: transparent;
+  resize: vertical;
+  overflow: auto;
+}
+
+.editor textarea::selection {
+  color: transparent;
+  background: color-mix(in oklab, var(--accent) 30%, transparent);
+}
+
+.editor textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-radius: 8px;
+}
+
+.more {
+  margin: 1rem 0;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  border-left: 4px solid var(--accent);
+  border-radius: 4px;
+  background: color-mix(in oklab, var(--accent) 12%, var(--bg));
+}
+
+.more a {
+  text-decoration: none;
+}
+
+.more a:hover {
+  text-decoration: underline;
+}
+
+button.primary {
+  font: inherit;
+  font-weight: 600;
+  color: var(--bg);
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 0.4rem 1.2rem;
+  cursor: pointer;
+}
+
+pre.output {
+  min-height: 3rem;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  white-space: pre-wrap;
+  /* Logged lists are long words. */
+  overflow-wrap: anywhere;
+}
+
+pre.output .error {
+  color: var(--bad);
+}
+
+#tour-run:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+#tour-run-note {
+  color: var(--muted);
+}
+
+.tour-run {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+#tour-output {
+  max-height: 24rem;
+  overflow: auto;
+}
+
+footer {
+  margin-top: 4rem;
+  padding-top: 1rem;
+  padding-bottom: 2rem;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* Dev mode: a switch, badges over the parts of the page with code behind
+   them, and a card per badge (devmode.js). */
+.dev-toggle {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 1rem 0.5rem 0.55rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: color-mix(in oklab, var(--surface) 82%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.12);
+  cursor: pointer;
+}
+
+.dev-toggle:hover {
+  border-color: var(--accent);
+}
+
+.dev-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 14%, transparent);
+  transition: color 0.2s, background 0.2s;
+}
+
+.dev-toggle[aria-pressed="true"] .dev-icon {
+  color: var(--bg);
+  background: var(--accent);
+}
+
+.dev-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 20;
+}
+
+.dev-badge {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--bg);
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  border-radius: 50%;
+  box-shadow: 0 2px 10px color-mix(in oklab, var(--accent) 45%, transparent);
+  cursor: pointer;
+  animation: dev-pop 0.35s cubic-bezier(0.2, 1.4, 0.4, 1) backwards;
+  transition: transform 0.15s;
+}
+
+.dev-badge:nth-child(2) { animation-delay: 30ms; }
+.dev-badge:nth-child(3) { animation-delay: 60ms; }
+.dev-badge:nth-child(4) { animation-delay: 90ms; }
+.dev-badge:nth-child(5) { animation-delay: 120ms; }
+.dev-badge:nth-child(6) { animation-delay: 150ms; }
+.dev-badge:nth-child(7) { animation-delay: 180ms; }
+.dev-badge:nth-child(8) { animation-delay: 210ms; }
+.dev-badge:nth-child(9) { animation-delay: 240ms; }
+
+.dev-badge:hover,
+.dev-badge[aria-expanded="true"] {
+  transform: scale(1.15);
+}
+
+.dev-badge:focus-visible,
+.dev-toggle:focus-visible,
+.dev-card button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@keyframes dev-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+.dev-card {
+  position: absolute;
+  z-index: 25;
+  width: min(32rem, calc(100vw - 2rem));
+  padding: 1rem 1.1rem 0.9rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
+  border-radius: 14px;
+  box-shadow: 0 18px 50px rgb(0 0 0 / 0.18), 0 2px 8px rgb(0 0 0 / 0.08);
+  animation: dev-rise 0.18s ease-out backwards;
+}
+
+.dev-card:focus {
+  outline: none;
+}
+
+@keyframes dev-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.dev-card-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.dev-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--heading);
+}
+
+.dev-close {
+  margin: -0.35rem -0.4rem 0 0;
+  width: 2rem;
+  height: 2rem;
+  font: inherit;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.dev-close:hover {
+  color: var(--text);
+  background: var(--code-bg);
+}
+
+.dev-about {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.dev-languages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.6rem;
+}
+
+.dev-languages button {
+  padding: 0.15rem 0.6rem;
+  font: inherit;
+  font-size: 0.78rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.dev-languages button:hover {
+  border-color: var(--accent);
+}
+
+.dev-languages button[aria-pressed="true"] {
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.dev-code {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  overflow-x: auto;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  background: var(--code-bg);
+  border-radius: 8px;
+}
+
+.dev-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 1rem;
+  margin: 0.65rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.dev-tour {
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+/* Phones: the card is a sheet along the bottom, above the switch. */
+@media (max-width: 640px) {
+  .dev-card {
+    position: fixed;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+    width: auto;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dev-badge,
+  .dev-card {
+    animation: none;
+  }
+}
+
+.dev-about code {
+  font-size: 0.85em;
+  color: var(--text);
+  padding: 0.05em 0.3em;
+  background: var(--code-bg);
+  border-radius: 4px;
+}

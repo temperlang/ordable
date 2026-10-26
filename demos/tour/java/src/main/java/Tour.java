@@ -33,10 +33,10 @@ public class Tour {
 
         // Negative means the first comes first, positive the second, and 0 only
         // for the same string.
-        String[][] pairs = {{"file2", "file10"}, {"x01", "x1"}, {"1.9", "1.10"}, {"file٢", "file10"}, {"a", "B"}, {"file10", "file10"}};
-        for (String[] p : pairs) {
-            System.out.println(p[0] + " vs " + p[1] + ": " + order(compareNatural(p[0], p[1])));
-        }
+        String[][] pairs = {{"file2", "file10"}, {"x01", "x1"}, {"1.9", "1.10"}, {"file٢", "file10"}, {"a", "B"}, {"file10", "file10"}};  // snippet: compare
+        for (String[] p : pairs) {  // snippet: compare
+            System.out.println(p[0] + " vs " + p[1] + ": " + order(compareNatural(p[0], p[1])));  // snippet: compare
+        }  // snippet: compare
 
         // Ignoring case, letters compare as lowercase, and case only breaks ties.
         String[][] cased = {{"a", "B"}, {"A", "a"}};
@@ -46,31 +46,31 @@ public class Tour {
 
         section("2. Sorting strings");
 
-        List<String> files = List.of("img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png");
-        System.out.println("files: " + String.join(" ", sortNatural(files)));
-        System.out.println("ignoring case: " + String.join(" ", sortNaturalIgnoringCase(files)));
+        List<String> files = List.of("img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png");  // snippet: sort, ignore-case
+        System.out.println("files: " + String.join(" ", sortNatural(files)));  // snippet: sort
+        System.out.println("ignoring case: " + String.join(" ", sortNaturalIgnoringCase(files)));  // snippet: ignore-case
 
         // Numbers of any length, and leading zeros only breaking ties.
-        List<String> versions = List.of("v1.10", "v2.0", "v1.9", "v10.1", "v1.2");
-        System.out.println("versions: " + String.join(" ", sortNatural(versions)));
-        List<String> big = List.of("n123456789012345678901234567890", "n9", "n99999999999999999999");
-        System.out.println("big numbers: " + String.join(" ", sortNatural(big)));
-        System.out.println("leading zeros: " + String.join(" ", sortNatural(List.of("2", "001", "1", "01"))));
+        List<String> versions = List.of("v1.10", "v2.0", "v1.9", "v10.1", "v1.2");  // snippet: numbers
+        System.out.println("versions: " + String.join(" ", sortNatural(versions)));  // snippet: numbers
+        List<String> big = List.of("n123456789012345678901234567890", "n9", "n99999999999999999999");  // snippet: numbers
+        System.out.println("big numbers: " + String.join(" ", sortNatural(big)));  // snippet: numbers
+        System.out.println("leading zeros: " + String.join(" ", sortNatural(List.of("2", "001", "1", "01"))));  // snippet: ties
 
         // Natural keys sort by plain string comparison, as in a database.
-        boolean before = naturalKey("file2").compareTo(naturalKey("file10")) < 0;
-        System.out.println("natural keys, file2 before file10: " + (before ? "yes" : "no"));
+        boolean before = naturalKey("file2").compareTo(naturalKey("file10")) < 0;  // snippet: keys
+        System.out.println("natural keys, file2 before file10: " + (before ? "yes" : "no"));  // snippet: keys
         // Keys are the same in every language, so they can be stored and shared.
-        String hex = naturalKey("file10").codePoints()
-            .mapToObj(c -> Integer.toHexString(c).toUpperCase())
-            .collect(java.util.stream.Collectors.joining(" "));
-        System.out.println("key for file10: " + hex);
+        String hex = naturalKey("file10").codePoints()  // snippet: keys
+            .mapToObj(c -> Integer.toHexString(c).toUpperCase())  // snippet: keys
+            .collect(java.util.stream.Collectors.joining(" "));  // snippet: keys
+        System.out.println("key for file10: " + hex);  // snippet: keys
 
         section("3. Sorting your own types");
 
         // sortNaturalByKey sorts any items by a string from each, made once each.
-        List<Track> tracks = List.of(new Track("Track 10: Outro", 95), new Track("Track 1: Intro", 61), new Track("Track 2: Rise", 184));
-        List<Track> byTitle = sortNaturalByKey(tracks, Track::title);
+        List<Track> tracks = List.of(new Track("Track 10: Outro", 95), new Track("Track 1: Intro", 61), new Track("Track 2: Rise", 184));  // snippet: by-key
+        List<Track> byTitle = sortNaturalByKey(tracks, Track::title);  // snippet: by-key
         System.out.println("tracks by title:");
         for (Track track : byTitle) {
             System.out.println("  " + track.title() + " (" + track.seconds() + " s)");
