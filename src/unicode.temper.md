@@ -34,6 +34,42 @@ Whether `c` is a digit in the run starting at `zero`.
 
     let isDigitOf(c: Int, zero: Int): Boolean { c >= zero && c <= zero + 9 }
 
+## Case Folding
+
+Folds `c` for comparing without case, with Unicode's simple case folding:
+one code point to one, mostly to lowercase, so `Σ`, `σ` and `ς` all fold
+to `σ`, and the Kelvin sign `K` to `k`. Full folding, which turns `ß`
+into `ss`, would change lengths and is left out. ASCII is checked first,
+and the rest is a binary search over the runs in `foldRuns`.
+
+    let foldCase(c: Int): Int {
+      if (c < 0x80) {
+        return if (c >= char'A' && c <= char'Z') { c + 32 } else { c };
+      }
+      // Runs are four numbers each: start, count, stride and delta.
+      var low = 0;
+      var high = foldRuns.length / 4;
+      while (high - low > 1) {
+        let middle = (low + high) / 2;
+        if (foldRuns[middle * 4] <= c) {
+          low = middle;
+        } else {
+          high = middle;
+        }
+      }
+      let start = foldRuns[low * 4];
+      let offset = c - start;
+      let stride = foldRuns[low * 4 + 2];
+      if (
+        offset >= 0 && offset < foldRuns[low * 4 + 1] * stride &&
+        (stride == 1 || (offset & 1) == 0)
+      ) {
+        c + foldRuns[low * 4 + 3]
+      } else {
+        c
+      }
+    }
+
 ## Tests
 
     test("decimal digits") {
@@ -54,4 +90,30 @@ Whether `c` is a digit in the run starting at `zero`.
       // Mathematical digits: runs right next to each other.
       assert(digitZero(0x1D7D7) == 0x1D7CE);
       assert(digitZero(0x1D7D8) == 0x1D7D8);
+    }
+
+    test("case folding") {
+      assert(foldCase(char'A') == char'a');
+      assert(foldCase(char'a') == char'a');
+      assert(foldCase(char'@') == char'@');
+      assert(foldCase(char'[') == char'[');
+      // Latin-1, then pairs alternating upper and lower, and their gaps.
+      assert(foldCase(0xC9) == 0xE9); // É
+      assert(foldCase(0xD7) == 0xD7); // ×
+      assert(foldCase(0x100) == 0x101); // Ā
+      assert(foldCase(0x101) == 0x101);
+      // Greek sigmas, Cyrillic, and signs that fold elsewhere.
+      assert(foldCase(0x3A3) == 0x3C3);
+      assert(foldCase(0x3C2) == 0x3C3);
+      assert(foldCase(0x416) == 0x436); // Ж
+      assert(foldCase(0x212A) == char'k'); // Kelvin
+      assert(foldCase(0x1E9E) == 0xDF); // ẞ to ß, but ß stays
+      assert(foldCase(0xDF) == 0xDF);
+      // Cherokee folds to uppercase.
+      assert(foldCase(0xAB70) == 0x13A0);
+      // Below the first run past ASCII, and the last run and past it.
+      assert(foldCase(0xB4) == 0xB4);
+      assert(foldCase(0x1E900) == 0x1E922);
+      assert(foldCase(0x1E922) == 0x1E922);
+      assert(foldCase(0x10FFFF) == 0x10FFFF);
     }

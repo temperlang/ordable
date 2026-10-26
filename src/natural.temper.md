@@ -18,9 +18,9 @@ Code points compare as they are, so `B` comes before `a`.
       compareWith(a, b, false)
     }
 
-The same, but ignoring ASCII case, so `a` comes before `B`. Strings that
-differ only in case still don't tie: uppercase comes first, as in `A`
-before `a`.
+The same, but ignoring case, so `a` comes before `B`, in any script with
+case: `é` and `É`, `Σ` and `σ`. Strings that differ only in case still
+don't tie: uppercase comes first, as in `A` before `a`.
 
     export let compareNaturalIgnoringCase(a: String, b: String): Int {
       compareWith(a, b, true)
@@ -80,9 +80,9 @@ leading zeros (fewer first, so `1` before `01`), then in the digits'
 script (by code point, so `1` before `١`), and, when ignoring case, then
 in case. That keeps the order total.
 
-Case folding is ASCII only for now. Unicode case folding needs bigger
-tables, which might belong in a shared library instead
-([unicode](unicode.temper.md)).
+Ignoring case uses Unicode's simple case folding
+([unicode](unicode.temper.md)), one code point to one, so `ß` doesn't
+match `ss`.
 
     let compareWith(a: String, b: String, ignoreCase: Boolean): Int {
       var i = String.begin;
@@ -128,7 +128,7 @@ tables, which might belong in a shared library instead
             scripts = zeroA - zeroB;
           }
         } else {
-          let diff = if (ignoreCase) { lowerAscii(x) - lowerAscii(y) } else { x - y };
+          let diff = if (ignoreCase) { foldCase(x) - foldCase(y) } else { x - y };
           if (diff != 0) {
             return sign(diff);
           }
@@ -158,10 +158,6 @@ tables, which might belong in a shared library instead
         i = s.next(i);
       }
       i
-    }
-
-    let lowerAscii(c: Int): Int {
-      if (c >= char'A' && c <= char'Z') { c + 32 } else { c }
     }
 
     let sign(x: Int): Int {
@@ -215,6 +211,19 @@ tables, which might belong in a shared library instead
       assertBeforeIgnoringCase(test, "A", "a");
       assertBeforeIgnoringCase(test, "File2", "file10");
       assert(compareNaturalIgnoringCase("Ab", "Ab") == 0);
+    }
+
+    test("case beyond ASCII") { test =>
+      // É matches é, though both still come after z (accents aren't
+      // folded); Σ, σ and ς match; Ж matches ж.
+      assertBefore(test, "z", "\u{C9}");
+      assertBeforeIgnoringCase(test, "\u{C9}cole2", "\u{E9}cole10");
+      assertBeforeIgnoringCase(test, "z", "\u{C9}");
+      assertBeforeIgnoringCase(test, "\u{3A3}2", "\u{3C3}10");
+      assertBeforeIgnoringCase(test, "\u{3C2}1", "\u{3A3}2");
+      assertBeforeIgnoringCase(test, "\u{416}a", "\u{436}b");
+      // Same apart from case: the code point breaks the tie, so uppercase first.
+      assertBeforeIgnoringCase(test, "\u{3A3}", "\u{3C3}");
     }
 
     test("digits in other scripts") { test =>
