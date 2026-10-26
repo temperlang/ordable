@@ -75,105 +75,177 @@ one.
 
 ## How It Works
 
-Both strings are walked together, a code point or a run of digits at a
-time. Numbers compare by value without converting them, so any number of
-digits works without overflow: after skipping leading zeros, more digits
-means bigger, and equal lengths compare digit by digit.
+Strings compare in levels, each one only deciding when all before it
+tie:
 
-A run of digits is all from one script, so `1٢` is two numbers. Runs in
-different scripts compare by value, so `٢` comes before `10`.
+1. **Letters and numbers.** Both strings are walked together, a
+   character or a run of digits at a time. Accents don't count at this
+   level, so `é` sorts with `e`, and when ignoring case, letters fold
+   fully, so `ß` matches `ss` and `Σ` matches `σ` and `ς`. Numbers
+   compare by value without converting them, so any number of digits
+   works without overflow: after skipping leading zeros, more digits
+   means bigger, and equal lengths compare digit by digit. A run of
+   digits is all from one script, so `1٢` is two numbers, and runs in
+   different scripts compare by value, so `٢` comes before `10`. A digit
+   against anything else sorts as its ASCII digit would.
+2. **Leading zeros:** the first difference, fewer first, so `1` before
+   `01`.
+3. **Digit scripts:** the first difference, by code point, so `1` before
+   `١`.
+4. **Accents:** the characters other than digits, with case folded when
+   ignoring case, so `e` before `é`, and `ss` before `ß`.
+5. **Case,** when ignoring case: the first difference, uppercase first,
+   so `E` before `e`.
 
-Things that don't change the main order are kept as tiebreaks, used only
-if everything else is equal, in this order: the first difference in
-leading zeros (fewer first, so `1` before `01`), then in the digits'
-script (by code point, so `1` before `١`), and, when ignoring case, then
-in case. That keeps the order total.
+Two strings tie at every level only if they're the same, which keeps the
+order total ([order properties](properties.temper.md)).
 
-Ignoring case uses Unicode's simple case folding
-([unicode](unicode.temper.md)), one code point to one, so `ß` doesn't
-match `ss`.
+Accents come from Unicode's canonical decompositions, and case folding
+is Unicode's ([unicode](unicode.temper.md)).
 
     let compareWith(a: String, b: String, ignoreCase: Boolean): Int {
-      var i = String.begin;
-      var j = String.begin;
+      let ra = new Reader(a, ignoreCase);
+      let rb = new Reader(b, ignoreCase);
       var zeros = 0;
       var scripts = 0;
-      var cases = 0;
-      while (a.hasIndex(i) && b.hasIndex(j)) {
-        let x = a[i];
-        let y = b[j];
-        let zeroA = digitZero(x);
-        let zeroB = digitZero(y);
-        if (zeroA >= 0 && zeroB >= 0) {
-          var zerosA = 0;
-          while (a.hasIndex(i) && a[i] == zeroA) {
-            zerosA += 1;
-            i = a.next(i);
-          }
-          var zerosB = 0;
-          while (b.hasIndex(j) && b[j] == zeroB) {
-            zerosB += 1;
-            j = b.next(j);
-          }
-          let endA = digitsEnd(a, i, zeroA);
-          let endB = digitsEnd(b, j, zeroB);
-          let lengthA = a.countBetween(i, endA);
-          let lengthB = b.countBetween(j, endB);
-          if (lengthA != lengthB) {
-            return sign(lengthA - lengthB);
-          }
-          while (a.hasIndex(i) && isDigitOf(a[i], zeroA)) {
-            let diff = (a[i] - zeroA) - (b[j] - zeroB);
-            if (diff != 0) {
-              return sign(diff);
+      while (ra.more() && rb.more()) {
+        if (!ra.folding() && !rb.folding()) {
+          let zeroA = digitZero(a[ra.at]);
+          let zeroB = digitZero(b[rb.at]);
+          if (zeroA >= 0 && zeroB >= 0) {
+            var i = ra.at;
+            var j = rb.at;
+            var zerosA = 0;
+            while (a.hasIndex(i) && a[i] == zeroA) {
+              zerosA += 1;
+              i = a.next(i);
             }
-            i = a.next(i);
-            j = b.next(j);
+            var zerosB = 0;
+            while (b.hasIndex(j) && b[j] == zeroB) {
+              zerosB += 1;
+              j = b.next(j);
+            }
+            let lengthA = a.countBetween(i, digitsEnd(a, i, zeroA));
+            let lengthB = b.countBetween(j, digitsEnd(b, j, zeroB));
+            if (lengthA != lengthB) {
+              return sign(lengthA - lengthB);
+            }
+            while (a.hasIndex(i) && isDigitOf(a[i], zeroA)) {
+              let diff = (a[i] - zeroA) - (b[j] - zeroB);
+              if (diff != 0) {
+                return sign(diff);
+              }
+              i = a.next(i);
+              j = b.next(j);
+            }
+            if (zeros == 0) {
+              zeros = zerosA - zerosB;
+            }
+            if (scripts == 0) {
+              scripts = zeroA - zeroB;
+            }
+            ra.at = i;
+            rb.at = j;
+            continue;
           }
-          if (zeros == 0) {
-            zeros = zerosA - zerosB;
-          }
-          if (scripts == 0) {
-            scripts = zeroA - zeroB;
-          }
-        } else {
-          let diff = sortKey(x, zeroA, ignoreCase) - sortKey(y, zeroB, ignoreCase);
-          if (diff != 0) {
-            return sign(diff);
-          }
-          if (cases == 0) {
-            cases = x - y;
-          }
-          i = a.next(i);
-          j = b.next(j);
+        }
+        let diff = ra.nextUnit() - rb.nextUnit();
+        if (diff != 0) {
+          return sign(diff);
         }
       }
-      if (a.hasIndex(i)) {
+      if (ra.more()) {
         1
-      } else if (b.hasIndex(j)) {
+      } else if (rb.more()) {
         -1
       } else if (zeros != 0) {
         sign(zeros)
       } else if (scripts != 0) {
         sign(scripts)
       } else {
+        compareMarks(a, b, ignoreCase)
+      }
+    }
+
+Reads a string's units for the first level: a digit as its ASCII digit,
+and anything else as its base letter, folded fully when ignoring case,
+which may give more than one unit, as `s s` for `ß`.
+
+    class Reader(private s: String, private ignoreCase: Boolean) {
+      public var at: StringIndex = String.begin;
+      // The next unit of a full folding, in `fullFolds`, or -1.
+      private var pending: Int = -1;
+
+      public more(): Boolean { pending >= 0 || s.hasIndex(at) }
+
+      public folding(): Boolean { pending >= 0 }
+
+      public nextUnit(): Int {
+        if (pending >= 0) {
+          let unit = fullFolds[pending];
+          pending = if ((pending + 1) % 4 != 0 && fullFolds[pending + 1] != 0) { pending + 1 } else { -1 };
+          return unit;
+        }
+        let c = s[at];
+        at = s.next(at);
+        let zero = digitZero(c);
+        if (zero >= 0) {
+          return char'0' + (c - zero);
+        }
+        let base = baseLetter(c);
+        if (!ignoreCase) {
+          return base;
+        }
+        if (base >= 0x80) {
+          let entry = findEntry(fullFolds, 4, base);
+          if (entry >= 0) {
+            pending = if (fullFolds[entry + 2] != 0) { entry + 2 } else { -1 };
+            return fullFolds[entry + 1];
+          }
+        }
+        foldCase(base)
+      }
+    }
+
+The last two levels, accents and then case, over the characters other
+than digits, which by then are the same in both strings.
+
+    let compareMarks(a: String, b: String, ignoreCase: Boolean): Int {
+      var i = skipDigits(a, String.begin);
+      var j = skipDigits(b, String.begin);
+      var cases = 0;
+      while (a.hasIndex(i) && b.hasIndex(j)) {
+        let x = a[i];
+        let y = b[j];
+        let diff = markKey(x, ignoreCase) - markKey(y, ignoreCase);
+        if (diff != 0) {
+          return sign(diff);
+        }
+        if (cases == 0) {
+          cases = x - y;
+        }
+        i = skipDigits(a, a.next(i));
+        j = skipDigits(b, b.next(j));
+      }
+      if (a.hasIndex(i)) {
+        1
+      } else if (b.hasIndex(j)) {
+        -1
+      } else {
         sign(cases)
       }
     }
 
-A digit against anything else sorts as its ASCII digit would, whatever
-its script, so `٢` comes before `z` just as `2` does. Comparing by its
-own code point instead would break transitivity: `٢` before `10` (by
-value) and `10` before `z`, yet `٢` after `z`.
+    let markKey(c: Int, ignoreCase: Boolean): Int {
+      if (ignoreCase) { foldCase(c) } else { c }
+    }
 
-    let sortKey(c: Int, zero: Int, ignoreCase: Boolean): Int {
-      if (zero >= 0) {
-        char'0' + (c - zero)
-      } else if (ignoreCase) {
-        foldCase(c)
-      } else {
-        c
+    let skipDigits(s: String, start: StringIndex): StringIndex {
+      var i = start;
+      while (s.hasIndex(i) && digitZero(s[i]) >= 0) {
+        i = s.next(i);
       }
+      i
     }
 
     let digitsEnd(s: String, start: StringIndex, zero: Int): StringIndex {
@@ -238,11 +310,9 @@ value) and `10` before `z`, yet `٢` after `z`.
     }
 
     test("case beyond ASCII") { test =>
-      // É matches é, though both still come after z (accents aren't
-      // folded); Σ, σ and ς match; Ж matches ж.
-      assertBefore(test, "z", "\u{C9}");
+      // É matches é; Σ, σ and ς match; Ж matches ж.
       assertBeforeIgnoringCase(test, "\u{C9}cole2", "\u{E9}cole10");
-      assertBeforeIgnoringCase(test, "z", "\u{C9}");
+      assertBeforeIgnoringCase(test, "\u{C9}", "z");
       assertBeforeIgnoringCase(test, "\u{3A3}2", "\u{3C3}10");
       assertBeforeIgnoringCase(test, "\u{3C2}1", "\u{3A3}2");
       assertBeforeIgnoringCase(test, "\u{416}a", "\u{436}b");
@@ -278,7 +348,35 @@ value) and `10` before `z`, yet `٢` after `z`.
       assert(compareNatural("", "") == 0);
       assert(compareNatural("a10b", "a10b") == 0);
       assert(compareNatural("é2", "é10") < 0);
-      assertBefore(test, "z", "é");
+      assertBefore(test, "e", "é");
+      assertBefore(test, "é", "f");
+    }
+
+    test("accents") { test =>
+      // Accents only break ties, so é sorts with e, and ǖ with u.
+      assertBefore(test, "e", "é");
+      assertBefore(test, "é", "f");
+      assertBefore(test, "école2", "ecole10");
+      assertBefore(test, "u", "\u{1D6}");
+      assertBefore(test, "\u{1D6}", "v");
+      // Ignoring case: E, e, É, é, since accents count before case, and
+      // case puts uppercase first. (Intl.Collator also puts accents first,
+      // but lowercase first.)
+      assertBeforeIgnoringCase(test, "E", "e");
+      assertBeforeIgnoringCase(test, "e", "\u{C9}");
+      assertBeforeIgnoringCase(test, "\u{C9}", "\u{E9}");
+      assertBeforeIgnoringCase(test, "\u{E9}", "f");
+    }
+
+    test("full case folding when ignoring case") { test =>
+      // ß matches ss, then sorts after it; ﬁ matches fi.
+      assertBeforeIgnoringCase(test, "Strase", "Strasse");
+      assertBeforeIgnoringCase(test, "STRASSE", "Strasse");
+      assertBeforeIgnoringCase(test, "Strasse", "Straße");
+      assertBeforeIgnoringCase(test, "Straße", "Strassen");
+      assertBeforeIgnoringCase(test, "\u{FB01}le2", "file10");
+      // Not when comparing case: ß is its own letter, after z.
+      assertBefore(test, "Straz", "Straße");
     }
 
     test("sorting") { test =>

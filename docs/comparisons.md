@@ -30,12 +30,13 @@ identically in all three.
 - **Transitive,** which every library here passed on random triples, as
   Ordable now does after its property tests caught a bug.
 
+Since this comparison, Ordable also sorts accented letters with their
+base letter (`e`, then `é`, then `f`), as `Intl.Collator`,
+`natural-orderby` and `natsort` (ignoring case) do, and matches `ß` with
+`ss` when ignoring case, as `Intl.Collator` and `natsort` do.
+
 ## Where others do things Ordable doesn't (yet)
 
-- **Accents by base letter:** `Intl.Collator`, `natural-orderby` and
-  `natsort` (ignoring case) put `é` with `e`; Ordable puts it after `z`.
-- **`ß` as `ss`** when ignoring case: `Intl.Collator` (base) and
-  `natsort` do.
 - **Signed and decimal numbers:** `natsort` with `ns.REAL` and
   `natural-orderby` read `-10` as below `-5` and `1.25` as below `1.3`;
   Ordable reads digits only, like most, so version numbers sort right.

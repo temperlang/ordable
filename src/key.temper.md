@@ -25,15 +25,18 @@ checks that every language agrees.
 
 ## Layout
 
-A key is the main order, then each tiebreak in turn, set apart by
-U+0001, which is below every other code point used:
+A key holds the levels of [the comparison](natural.temper.md) in turn,
+set apart by U+0001, which is below every other code point used:
 
-1. **Main:** for each character other than a digit, its sort key (case
-   folded when ignoring case); for each run of digits, its value. A
-   value is its count of significant digits, then those digits.
+1. **Letters and numbers:** for each character other than a digit, its
+   base letter, folded fully when ignoring case (so `ß` gives `s s`);
+   for each run of digits, its value. A value is its count of
+   significant digits, then those digits.
 2. **Leading zeros:** the count for each run of digits.
 3. **Scripts:** the zero of each run of digits, so `1` before `١`.
-4. **Case,** when ignoring case: each character other than a digit, as
+4. **Accents:** each character other than a digit, case folded when
+   ignoring case.
+5. **Case,** when ignoring case: each character other than a digit, as
    it is.
 
 Every code point is shifted up by 3, past the separator. Then digits
@@ -51,37 +54,42 @@ then two digits in base 0x7F00, at U+0100 up.
       let main = new StringBuilder();
       let zeros = new StringBuilder();
       let scripts = new StringBuilder();
+      let marks = new StringBuilder();
       let cases = new StringBuilder();
-      var i = String.begin;
-      while (s.hasIndex(i)) {
-        let c = s[i];
-        let zero = digitZero(c);
+      let reader = new Reader(s, ignoreCase);
+      while (reader.more()) {
+        let i = reader.at;
+        let zero = if (reader.folding()) { -1 } else { digitZero(s[i]) };
         if (zero >= 0) {
+          var at = i;
           var count = 0;
-          while (s.hasIndex(i) && s[i] == zero) {
+          while (s.hasIndex(at) && s[at] == zero) {
             count += 1;
-            i = s.next(i);
+            at = s.next(at);
           }
           appendCount(zeros, count);
           appendCodePoint(scripts, zero);
-          let end = digitsEnd(s, i, zero);
-          appendCount(main, s.countBetween(i, end));
-          while (s.hasIndex(i) && isDigitOf(s[i], zero)) {
-            appendCodePoint(main, char'0' + (s[i] - zero));
-            i = s.next(i);
+          appendCount(main, s.countBetween(at, digitsEnd(s, at, zero)));
+          while (s.hasIndex(at) && isDigitOf(s[at], zero)) {
+            appendCodePoint(main, char'0' + (s[at] - zero));
+            at = s.next(at);
           }
+          reader.at = at;
         } else {
-          appendCodePoint(main, if (ignoreCase) { foldCase(c) } else { c });
-          if (ignoreCase) {
-            appendCodePoint(cases, c);
+          if (!reader.folding()) {
+            let c = s[i];
+            appendCodePoint(marks, markKey(c, ignoreCase));
+            if (ignoreCase) {
+              appendCodePoint(cases, c);
+            }
           }
-          i = s.next(i);
+          appendCodePoint(main, reader.nextUnit());
         }
       }
-      main.appendCodePoint(separator) orelse panic();
-      main.append(zeros.toString());
-      main.appendCodePoint(separator) orelse panic();
-      main.append(scripts.toString());
+      for (let section of [zeros, scripts, marks]) {
+        main.appendCodePoint(separator) orelse panic();
+        main.append(section.toString());
+      }
       if (ignoreCase) {
         main.appendCodePoint(separator) orelse panic();
         main.append(cases.toString());
@@ -173,18 +181,23 @@ Code points are in hexadecimal.
     }
 
     test("exact keys") {
-      assert(keyCodes(naturalKey("")) == "1 1");
-      assert(keyCodes(naturalKey("file10")) == "69 6c 6f 68 35 34 33 1 33 1 33");
+      assert(keyCodes(naturalKey("")) == "1 1 1");
+      // Letters and numbers, zeros, scripts, then accents.
+      assert(keyCodes(naturalKey("file10")) == "69 6c 6f 68 35 34 33 1 33 1 33 1 69 6c 6f 68");
       // A run's leading zeros go after the first separator.
-      assert(keyCodes(naturalKey("a007")) == "64 34 3a 1 35 1 33");
+      assert(keyCodes(naturalKey("a007")) == "64 34 3a 1 35 1 33 1 64");
       // Digits in another script, whose zero goes after the second separator.
-      assert(keyCodes(naturalKey("x\u{662}\u{661}")) == "7b 35 35 34 1 33 1 663");
+      assert(keyCodes(naturalKey("x\u{662}\u{661}")) == "7b 35 35 34 1 33 1 663 1 7b");
       // A count of 10 digits is 9 then 1.
-      assert(keyCodes(naturalKey("1234567890")) == "3c 34 34 35 36 37 38 39 3a 3b 3c 33 1 33 1 33");
-      // Ignoring case, the characters as they are come after a third separator.
-      assert(keyCodes(naturalKeyIgnoringCase("Ab")) == "64 65 1 1 1 44 65");
+      assert(keyCodes(naturalKey("1234567890")) == "3c 34 34 35 36 37 38 39 3a 3b 3c 33 1 33 1 33 1");
+      // é is e in the first level, and itself in the accents level.
+      assert(keyCodes(naturalKey("\u{E9}")) == "68 1 1 1 ec");
+      // Ignoring case: folded fully first (ß to s s), case folded for
+      // accents, and as it is for case.
+      assert(keyCodes(naturalKeyIgnoringCase("Ab")) == "64 65 1 1 1 64 65 1 44 65");
+      assert(keyCodes(naturalKeyIgnoringCase("\u{DF}")) == "76 76 1 1 1 e2 1 e2");
       // Past U+D7FB: U+D7FF, then two digits in base 0x7F00 from U+0100.
-      assert(keyCodes(naturalKey("\u{1F600}")) == "d7ff 102 2104 1 1");
+      assert(keyCodes(naturalKey("\u{1F600}")) == "d7ff 102 2104 1 1 1 d7ff 102 2104");
     }
 
     test("keys stay below surrogates and above U+0000") {
