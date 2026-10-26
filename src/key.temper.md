@@ -9,7 +9,7 @@ and sorted anywhere that compares strings, such as a database column
 with `ORDER BY`.
 
 Key code points are all below U+D800, where comparing UTF-16 code units
-(JavaScript, Java, C#), UTF-8 bytes (Rust, C++) and code points (Python)
+(JavaScript, Java, C#), UTF-8 bytes (Rust, C++), and code points (Python)
 all agree, and none is U+0000. A key is no shorter than its string and,
 with digits, a little longer.
 

@@ -51,12 +51,12 @@ int main() {
 
   // Negative means the first comes first, positive the second, and 0 only for
   // the same string.
-  std::vector<std::pair<std::string, std::string>> pairs = {
-      {"file2", "file10"}, {"x01", "x1"}, {"1.9", "1.10"},
-      {"file٢", "file10"}, {"a", "B"}, {"file10", "file10"}};
-  for (auto const &p : pairs) {
-    std::cout << p.first << " vs " << p.second << ": " << order(compareNatural(p.first, p.second)) << "\n";
-  }
+  std::vector<std::pair<std::string, std::string>> pairs = {  // snippet: compare
+      {"file2", "file10"}, {"x01", "x1"}, {"1.9", "1.10"},  // snippet: compare
+      {"file٢", "file10"}, {"a", "B"}, {"file10", "file10"}};  // snippet: compare
+  for (auto const &p : pairs) {  // snippet: compare
+    std::cout << p.first << " vs " << p.second << ": " << order(compareNatural(p.first, p.second)) << "\n";  // snippet: compare
+  }  // snippet: compare
 
   // Ignoring case, letters compare as lowercase, and case only breaks ties.
   std::vector<std::pair<std::string, std::string>> cased = {{"a", "B"}, {"A", "a"}};
@@ -67,34 +67,34 @@ int main() {
 
   section("2. Sorting strings");
 
-  auto files = list({"img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png"});
-  std::cout << "files: " << join(*sortNatural(files)) << "\n";
-  std::cout << "ignoring case: " << join(*sortNaturalIgnoringCase(files)) << "\n";
+  auto files = list({"img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png"});  // snippet: sort, ignore-case
+  std::cout << "files: " << join(*sortNatural(files)) << "\n";  // snippet: sort
+  std::cout << "ignoring case: " << join(*sortNaturalIgnoringCase(files)) << "\n";  // snippet: ignore-case
 
   // Numbers of any length, and leading zeros only breaking ties.
-  auto versions = list({"v1.10", "v2.0", "v1.9", "v10.1", "v1.2"});
-  std::cout << "versions: " << join(*sortNatural(versions)) << "\n";
-  auto big = list({"n123456789012345678901234567890", "n9", "n99999999999999999999"});
-  std::cout << "big numbers: " << join(*sortNatural(big)) << "\n";
-  std::cout << "leading zeros: " << join(*sortNatural(list({"2", "001", "1", "01"}))) << "\n";
+  auto versions = list({"v1.10", "v2.0", "v1.9", "v10.1", "v1.2"});  // snippet: numbers
+  std::cout << "versions: " << join(*sortNatural(versions)) << "\n";  // snippet: numbers
+  auto big = list({"n123456789012345678901234567890", "n9", "n99999999999999999999"});  // snippet: numbers
+  std::cout << "big numbers: " << join(*sortNatural(big)) << "\n";  // snippet: numbers
+  std::cout << "leading zeros: " << join(*sortNatural(list({"2", "001", "1", "01"}))) << "\n";  // snippet: ties
 
   // Natural keys sort by plain string comparison, as in a database.
-  bool before = naturalKey("file2") < naturalKey("file10");
-  std::cout << "natural keys, file2 before file10: " << (before ? "yes" : "no") << "\n";
+  bool before = naturalKey("file2") < naturalKey("file10");  // snippet: keys
+  std::cout << "natural keys, file2 before file10: " << (before ? "yes" : "no") << "\n";  // snippet: keys
   // Keys are the same in every language, so they can be stored and shared.
   // (This key is all ASCII, so its bytes are its code points.)
-  std::cout << "key for file10:";
-  for (unsigned char c : naturalKey("file10")) {
-    std::cout << " " << std::uppercase << std::hex << static_cast<int>(c) << std::dec;
-  }
-  std::cout << "\n";
+  std::cout << "key for file10:";  // snippet: keys
+  for (unsigned char c : naturalKey("file10")) {  // snippet: keys
+    std::cout << " " << std::uppercase << std::hex << static_cast<int>(c) << std::dec;  // snippet: keys
+  }  // snippet: keys
+  std::cout << "\n";  // snippet: keys
 
   section("3. Sorting your own types");
 
   // sortNaturalByKey sorts any items by a string from each, made once each.
-  auto tracks = std::make_shared<std::vector<Track>>(
-      std::vector<Track>{{"Track 10: Outro", 95}, {"Track 1: Intro", 61}, {"Track 2: Rise", 184}});
-  auto byTitle = sortNaturalByKey<Track>(tracks, [](Track const &track) { return track.title; });
+  auto tracks = std::make_shared<std::vector<Track>>(  // snippet: by-key
+      std::vector<Track>{{"Track 10: Outro", 95}, {"Track 1: Intro", 61}, {"Track 2: Rise", 184}});  // snippet: by-key
+  auto byTitle = sortNaturalByKey<Track>(tracks, [](Track const &track) { return track.title; });  // snippet: by-key
   std::cout << "tracks by title:\n";
   for (auto const &track : *byTitle) {
     std::cout << "  " << track.title << " (" << track.seconds << " s)\n";

@@ -3,7 +3,7 @@
 Measured 2026-10-26 against the usual natural sorts: Python's `natsort`
 8.4, JS's `Intl.Collator` (English, numeric) plus `natural-orderby` and
 `natural-compare`, and Rust's `natord` 1.0.9 and `alphanumeric-sort`
-1.5.8. Ordable ran in Python, JS and Rust, and sorted every set
+1.5.8. Ordable ran in Python, JS, and Rust, and sorted every set
 identically in all three.
 
 ## Where Ordable stands out
@@ -13,18 +13,18 @@ identically in all three.
   (ignoring case), `é` and `e` (by base letter), or `١٠` and `10`. Then
   the result depends on the order the list arrived in, so the same files
   can sort differently on two machines. Over 300 random strings,
-  `natsort` tied 54 distinct pairs, `Intl.Collator` 54, `natord` 197 and
-  `natural-orderby` 257. Ordable, `natural-compare` and
+  `natsort` tied 54 distinct pairs, `Intl.Collator` 54, `natord` 197, and
+  `natural-orderby` 257. Ordable, `natural-compare`, and
   `alphanumeric-sort` tied none, and of those, only Ordable reads digits
   outside ASCII or ignores case.
 - **The same order in every language.** Ordable gives identical results
-  in C++, C#, Java, JavaScript, Lua, Python and Rust. The others each
+  in C++, C#, Java, JavaScript, Lua, Python, and Rust. The others each
   exist in one language, and `Intl.Collator` varies by locale, ICU
-  version and platform.
+  version, and platform.
 - **Digits in every script.** `file٢` (Arabic-Indic 2) sorts before
   `file١٠` and `file10`, and fullwidth `２` before `１０`. `natsort` and
   `Intl.Collator` read other scripts' digits too, but tie `١٠` with `10`;
-  `natural-orderby`, `natural-compare`, `natord` and `alphanumeric-sort`
+  `natural-orderby`, `natural-compare`, `natord`, and `alphanumeric-sort`
   compare them as plain characters.
 - **Numbers of any length,** as most others manage too.
 - **Transitive,** which every library here passed on random triples, as
@@ -32,7 +32,7 @@ identically in all three.
 
 Since this comparison, Ordable also sorts accented letters with their
 base letter (`e`, then `é`, then `f`), as `Intl.Collator`,
-`natural-orderby` and `natsort` (ignoring case) do, and matches `ß` with
+`natural-orderby`, and `natsort` (ignoring case) do, and matches `ß` with
 `ss` when ignoring case, as `Intl.Collator` and `natsort` do.
 
 ## Where others do things Ordable doesn't (yet)

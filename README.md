@@ -22,7 +22,8 @@ naturalKey("file10"); // Sorts after naturalKey("file2")
 ```
 
 Also: a [tour](demos/README.md) of the whole API in each language, with
-identical output.
+identical output, and a [site](site/) to try natural sorting in the
+browser, beside plain sorting and `Intl.Collator`.
 
 ## Rules
 
@@ -65,8 +66,9 @@ so Ordable stays below 1.0 until that's decided.
 - **A spec:** the source as a readable specification of the default
   order and every option, with its tests beside it, and comparison
   tables so people can choose well.
-- **Then:** a showcase page, where you paste lines and see natural order
-  beside plain sorting, in every language.
+- **Started:** a [showcase site](site/), where you pick or type lines
+  and see natural order beside plain sorting and `Intl.Collator`, with
+  the code in every language.
 - **Before 1.0:** decide where Unicode tables live, and be sure we love
   the natural key format, since stored keys depend on it.
 
@@ -100,6 +102,14 @@ the same text (see [demos](demos/README.md)):
 
     uv run demos/run.py
 
+Build and preview the site, which uses the JS backend's output:
+
+    temper build -b js
+    npm ci --prefix site
+    uv run site/build.py
+    python3 -m http.server -d site/build
+
 CI runs the tests and the tour on every backend for pull requests and
-pushes to `main`, using Temper's nightly `dev` build. Source files in `src/`
+pushes to `main`, using Temper's nightly `dev` build, and publishes the
+site from `main`. Source files in `src/`
 are literate Markdown, with tests next to the code they cover.
