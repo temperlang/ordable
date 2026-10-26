@@ -4,7 +4,8 @@
 //! print the same text. See ../README.md for how to run them.
 
 use ordable::{
-    compare_natural, compare_natural_ignoring_case, sort_natural, sort_natural_by_key, sort_natural_ignoring_case,
+    compare_natural, compare_natural_ignoring_case, natural_key, sort_natural, sort_natural_by_key,
+    sort_natural_ignoring_case,
 };
 use std::sync::Arc;
 
@@ -63,6 +64,13 @@ fn main() {
     let big = list(&["n123456789012345678901234567890", "n9", "n99999999999999999999"]);
     println!("big numbers: {}", join(&sort_natural(big)));
     println!("leading zeros: {}", join(&sort_natural(list(&["2", "001", "1", "01"]))));
+
+    // Natural keys sort by plain string comparison, as in a database.
+    let before = natural_key("file2") < natural_key("file10");
+    println!("natural keys, file2 before file10: {}", if before { "yes" } else { "no" });
+    // Keys are the same in every language, so they can be stored and shared.
+    let hex: Vec<String> = natural_key("file10").chars().map(|c| format!("{:X}", c as u32)).collect();
+    println!("key for file10: {}", hex.join(" "));
 
     section("3. Sorting your own types");
 

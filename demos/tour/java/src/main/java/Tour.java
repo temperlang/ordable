@@ -5,6 +5,7 @@
 
 import static ordable.OrdableGlobal.compareNatural;
 import static ordable.OrdableGlobal.compareNaturalIgnoringCase;
+import static ordable.OrdableGlobal.naturalKey;
 import static ordable.OrdableGlobal.sortNatural;
 import static ordable.OrdableGlobal.sortNaturalByKey;
 import static ordable.OrdableGlobal.sortNaturalIgnoringCase;
@@ -55,6 +56,15 @@ public class Tour {
         List<String> big = List.of("n123456789012345678901234567890", "n9", "n99999999999999999999");
         System.out.println("big numbers: " + String.join(" ", sortNatural(big)));
         System.out.println("leading zeros: " + String.join(" ", sortNatural(List.of("2", "001", "1", "01"))));
+
+        // Natural keys sort by plain string comparison, as in a database.
+        boolean before = naturalKey("file2").compareTo(naturalKey("file10")) < 0;
+        System.out.println("natural keys, file2 before file10: " + (before ? "yes" : "no"));
+        // Keys are the same in every language, so they can be stored and shared.
+        String hex = naturalKey("file10").codePoints()
+            .mapToObj(c -> Integer.toHexString(c).toUpperCase())
+            .collect(java.util.stream.Collectors.joining(" "));
+        System.out.println("key for file10: " + hex);
 
         section("3. Sorting your own types");
 

@@ -10,6 +10,7 @@ from functools import cmp_to_key
 from ordable import (
     compare_natural,
     compare_natural_ignoring_case,
+    natural_key,
     sort_natural,
     sort_natural_by_key,
     sort_natural_ignoring_case,
@@ -50,6 +51,11 @@ print(f"versions: {' '.join(sort_natural(versions))}")
 big = ["n123456789012345678901234567890", "n9", "n99999999999999999999"]
 print(f"big numbers: {' '.join(sort_natural(big))}")
 print(f"leading zeros: {' '.join(sort_natural(['2', '001', '1', '01']))}")
+
+# Natural keys sort by plain string comparison, as in a database.
+print(f"natural keys, file2 before file10: {'yes' if natural_key('file2') < natural_key('file10') else 'no'}")
+# Keys are the same in every language, so they can be stored and shared.
+print(f"key for file10: {' '.join(f'{ord(c):X}' for c in natural_key('file10'))}")
 
 section("3. Sorting your own types")
 

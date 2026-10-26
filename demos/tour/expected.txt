@@ -16,6 +16,8 @@ ignoring case: img1.png IMG2.png img2.png img10.png img12.png
 versions: v1.2 v1.9 v1.10 v2.0 v10.1
 big numbers: n9 n99999999999999999999 n123456789012345678901234567890
 leading zeros: 1 01 001 2
+natural keys, file2 before file10: yes
+key for file10: 69 6C 6F 68 35 34 33 1 33 1 33
 
 ## 3. Sorting your own types
 tracks by title:

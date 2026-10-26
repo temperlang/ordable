@@ -32,11 +32,11 @@ A sorted copy, in natural order. Sorting is stable, though with a total
 order that only matters for equal strings.
 
     export let sortNatural(strings: List<String>): List<String> {
-      strings.sorted { a, b => compareNatural(a, b) }
+      sortByKeys(strings, strings, false)
     }
 
     export let sortNaturalIgnoringCase(strings: List<String>): List<String> {
-      strings.sorted { a, b => compareNaturalIgnoringCase(a, b) }
+      sortByKeys(strings, strings, true)
     }
 
 A sorted copy of any items, in the natural order of a string from each,
@@ -52,17 +52,26 @@ Items with the same key keep their order.
       sortByKeys(items, items.map(key), true)
     }
 
-Sorts positions by their keys, then picks the items in that order.
+Sorts positions by their keys, then picks the items in that order. Past
+a few items, it first makes each key's [natural sort key](key.temper.md),
+so each comparison is a plain string comparison instead of a natural
+one.
 
     let sortByKeys<T>(items: List<T>, keys: List<String>, ignoreCase: Boolean): List<T> {
       let positions = new ListBuilder<Int>();
       for (var i = 0; i < items.length; i += 1) {
         positions.add(i);
       }
-      positions.toList()
-        .sorted { a, b => compareWith(keys[a], keys[b], ignoreCase) }
-        .map { i => items[i] }
+      let sorted = if (items.length < sortKeysFrom) {
+        positions.toList().sorted { a, b => compareWith(keys[a], keys[b], ignoreCase) }
+      } else {
+        let natural: List<String> = keys.map { k => keyWith(k, ignoreCase) };
+        positions.toList().sorted { a, b => natural[a] <=> natural[b] }
+      };
+      sorted.map { i => items[i] }
     }
+
+    let sortKeysFrom = 16;
 
 ## How It Works
 
