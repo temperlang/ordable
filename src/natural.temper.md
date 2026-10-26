@@ -128,7 +128,7 @@ match `ss`.
             scripts = zeroA - zeroB;
           }
         } else {
-          let diff = if (ignoreCase) { foldCase(x) - foldCase(y) } else { x - y };
+          let diff = sortKey(x, zeroA, ignoreCase) - sortKey(y, zeroB, ignoreCase);
           if (diff != 0) {
             return sign(diff);
           }
@@ -149,6 +149,21 @@ match `ss`.
         sign(scripts)
       } else {
         sign(cases)
+      }
+    }
+
+A digit against anything else sorts as its ASCII digit would, whatever
+its script, so `٢` comes before `z` just as `2` does. Comparing by its
+own code point instead would break transitivity: `٢` before `10` (by
+value) and `10` before `z`, yet `٢` after `z`.
+
+    let sortKey(c: Int, zero: Int, ignoreCase: Boolean): Int {
+      if (zero >= 0) {
+        char'0' + (c - zero)
+      } else if (ignoreCase) {
+        foldCase(c)
+      } else {
+        c
       }
     }
 
@@ -224,6 +239,13 @@ match `ss`.
       assertBeforeIgnoringCase(test, "\u{416}a", "\u{436}b");
       // Same apart from case: the code point breaks the tie, so uppercase first.
       assertBeforeIgnoringCase(test, "\u{3A3}", "\u{3C3}");
+    }
+
+    test("digits in other scripts against other characters") { test =>
+      // As their ASCII digits would: before letters, after spaces.
+      assertBefore(test, "\u{662}", "z");
+      assertBefore(test, " ", "\u{662}");
+      assertBefore(test, "\u{FF12}", "a");
     }
 
     test("digits in other scripts") { test =>
