@@ -37,7 +37,8 @@ const SPOTS = [
     id: "numbers",
     title: "Numbers of any length",
     about: "Runs of digits compare as numbers, however long, without overflow, so v1.9 comes before v1.10.",
-    target: () => find("#samples"),
+    // The Versions list, where that shows most.
+    target: () => [...document.querySelectorAll("#samples button")].find((b) => b.textContent === "Versions"),
   },
   {
     id: "ignore-case",
@@ -48,8 +49,9 @@ const SPOTS = [
   {
     id: "ties",
     title: "One answer, whatever the input order",
-    about: "`compareNatural` gives 0 only for the same string. Leading zeros, digit scripts, accents and case only break ties, so 1 comes before 01.",
-    target: () => find("#shuffle"),
+    about: "`compareNatural` gives 0 only for the same string, so a list always sorts the same way, whatever its order, as shuffling shows. Leading zeros, digit scripts, accents, and case only break ties, so 1 comes before 01.",
+    // Ordable's "No ties, ever", the claim the shuffle tests.
+    target: () => find("#ordable-stat"),
   },
   {
     id: "by-key",
@@ -245,7 +247,7 @@ export function initDevMode({ toggle, languages, language, highlight, showTour }
 
   addEventListener("resize", schedule);
   new ResizeObserver(schedule).observe(document.body);
-  // Clicks and input can show, hide or move parts, like the tabs do.
+  // Clicks and input can show, hide, or move parts, like the tabs do.
   document.addEventListener("click", schedule, true);
   document.addEventListener("input", schedule, true);
   document.addEventListener("keydown", (event) => {

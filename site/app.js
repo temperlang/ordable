@@ -1,7 +1,7 @@
 // @ts-check
 
 // The page's behavior: the sort-off (sortoff.js), the playground, the code
-// tabs, library sizes and dev mode. Ordable comes from Temper's JS output
+// tabs, library sizes, and dev mode. Ordable comes from Temper's JS output
 // through the import map.
 
 import * as ordable from "ordable";
@@ -145,7 +145,7 @@ function escapeHtml(s) {
 }
 
 /**
- * Source as HTML, with comments, strings, numbers, keywords and type-like
+ * Source as HTML, with comments, strings, numbers, keywords, and type-like
  * names in spans.
  *
  * @param {string} source

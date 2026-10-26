@@ -16,34 +16,47 @@ import {
 /**
  * A sample list, in a deliberately jumbled input order. Some read best
  * ignoring case, which choosing them turns on.
- * @typedef {{ name: string, items: string[], ignoreCase?: boolean, note?: string }} Sample
+ * @typedef {{ name: string, items: string[], ignoreCase?: boolean, note?: string, keys?: [string, string] }} Sample
+ *
+ * `keys` is the pair the natural keys panel starts on: neighbors that show
+ * the list's point in their keys, used when they're neighbors in Ordable's
+ * order.
  */
 
 /** @type {Sample[]} */
 const SAMPLES = [
-  { name: "Photos", items: ["IMG_10.jpg", "IMG_9.jpg", "IMG_100.jpg", "IMG_1.jpg", "IMG_20.jpg", "IMG_2.jpg", "IMG_11.jpg"] },
+  // Mixed case, as from a camera and a download folder, so Ignore case
+  // visibly changes the first list.
+  { name: "Photos", items: ["IMG_10.jpg", "IMG_9.jpg", "img_100.jpg", "img_1.jpg", "IMG_20.jpg", "img_2.jpg", "IMG_11.jpg"],
+    keys: ["IMG_9.jpg", "IMG_10.jpg"] },
   {
     name: "Chapters",
     items: ["Chapter 10: Storm", "Chapter 2: Harbor", "Chapter 1: Letters", "Chapter 12: Home", "Chapter 3: Fog", "Chapter 11: Lighthouse"],
+    keys: ["Chapter 3: Fog", "Chapter 10: Storm"],
   },
-  { name: "Versions", items: ["v1.10.0", "v1.9.3", "v10.1.0", "v1.2.12", "v2.0.0", "v1.10.2", "v1.2.9"] },
+  { name: "Versions", items: ["v1.10.0", "v1.9.3", "v10.1.0", "v1.2.12", "v2.0.0", "v1.10.2", "v1.2.9"], keys: ["v1.2.9", "v1.2.12"] },
   {
     name: "Music tracks",
     items: ["10 Outro.flac", "1 Intro.flac", "9 Night Drive.flac", "2 Rise.flac", "11 Bonus.flac", "3 Echoes.flac"],
+    keys: ["9 Night Drive.flac", "10 Outro.flac"],
   },
-  { name: "Accents", items: ["Zoë", "Émile", "Eve", "Zoe", "Ada", "Éva", "Zach", "Eduardo"] },
+  // Zoe and Zoë differ only in the accents level.
+  { name: "Accents", items: ["Zoë", "Émile", "Eve", "Zoe", "Ada", "Éva", "Zach", "Eduardo"], keys: ["Zoe", "Zoë"] },
   {
     name: "Arabic-Indic digits",
     items: ["file١٠", "file٢", "file10", "file2", "file١", "file3"],
     note: "١٠ is 10 and ٢ is 2, in Arabic-Indic digits.",
+    // The same value in two scripts, which only the scripts level tells apart.
+    keys: ["file2", "file٢"],
   },
   {
     name: "Straße / Strasse",
-    items: ["Straße", "strasse", "Strassen", "STRASSE", "Strase", "Strasse", "Straßen"],
+    items: ["Straße", "Strassen", "STRASSE", "Strase", "Strasse", "Straßen"],
     ignoreCase: true,
     note: "Ignoring case, ß matches ss, as Unicode's case folding says.",
+    keys: ["Strasse", "Straße"],
   },
-  { name: "Leading zeros", items: ["010", "2", "001", "1", "02", "10", "01", "3"] },
+  { name: "Leading zeros", items: ["010", "2", "001", "1", "02", "10", "01", "3"], keys: ["1", "01"] },
 ];
 
 /** @param {string} id */
@@ -191,7 +204,8 @@ export function initSortOff() {
   initHero();
 
   let sample = SAMPLES[0];
-  let ignoreCase = false;
+  // On at first, as most people want; turning it off shows what case changes.
+  let ignoreCase = true;
   /** @type {Row[]} */
   let input = toRows(sample.items);
   /** @type {string | null} The chosen row's id, for the keys panel. */
@@ -334,11 +348,26 @@ export function initSortOff() {
     }, 200);
   });
 
+  // Phones show Ordable beside one other column, chosen here.
+  const compareButtons = [...document.querySelectorAll(".compare-with button")];
+  /** @param {string} which */
+  const compareWith = (which) => {
+    $("columns").dataset.compare = which;
+    for (const button of compareButtons) {
+      button.setAttribute("aria-pressed", String(/** @type {HTMLElement} */ (button).dataset.compare === which));
+    }
+  };
+  for (const button of compareButtons) {
+    button.addEventListener("click", () => compareWith(/** @type {HTMLElement} */ (button).dataset.compare ?? "plain"));
+  }
+
   // Shuffle: reorders the input several times, counting the different
   // orders each column gives. Ordable's and plain sorting's never change.
   const shuffleButton = /** @type {HTMLButtonElement} */ ($("shuffle"));
   shuffleButton.addEventListener("click", async () => {
     shuffleButton.disabled = true;
+    // The shuffle is about Intl.Collator's ties, so phones show its column.
+    compareWith("intl");
     const columns = ["rows-plain", "rows-ordable", "rows-intl"];
     /** @type {Set<string>[]} */
     const seen = columns.map(() => new Set());
@@ -377,25 +406,52 @@ export function initSortOff() {
    *
    * @param {HTMLElement} el
    * @param {string} key
+   * @param {number} differAt The code point where this key first differs from the other, marked, or -1.
    */
-  function showKey(el, key) {
+  function showKey(el, key, differAt = -1) {
     el.replaceChildren(
       ...[...key].flatMap((c, i) => {
         const code = /** @type {number} */ (c.codePointAt(0));
         const span = document.createElement("span");
         span.textContent = code.toString(16).toUpperCase();
-        if (code === 1) span.className = "sep";
+        span.className = [code === 1 ? "sep" : "", i === differAt ? "differ" : ""].join(" ").trim();
         return i ? [" ", span] : [span];
       }),
     );
+  }
+
+  /** Where two keys first differ, counting code points, or -1 if one starts the other. */
+  function firstDifference(/** @type {string} */ x, /** @type {string} */ y) {
+    const xs = [...x];
+    const ys = [...y];
+    for (let k = 0; k < Math.min(xs.length, ys.length); k++) {
+      if (xs[k] !== ys[k]) return k;
+    }
+    return -1;
   }
 
   function showKeys() {
     const rows = ordableOrder;
     const keyOf = ignoreCase ? naturalKeyIgnoringCase : naturalKey;
     const compare = ignoreCase ? compareNaturalIgnoringCase : compareNatural;
-    // Default to the second row, so there's a row after it.
+    // By default, the first neighbors that plain sorting would swap, as 9
+    // and 10 are, so the keys show how numbers are written: best when
+    // they differ only in their digits. Else the second row, so there's a
+    // row after it.
     let i = rows.findIndex((row) => row.id === chosen);
+    if (i < 0 && sample.keys) {
+      // The list's own pair, if they're neighbors.
+      const [x, y] = sample.keys;
+      i = rows.findIndex((row, k) => k + 1 < rows.length && new Set([row.text, rows[k + 1].text]).size === 2 &&
+        [row.text, rows[k + 1].text].every((t) => t === x || t === y));
+    }
+    if (i < 0) {
+      const plainText = (/** @type {Row} */ row) => (ignoreCase ? row.text.toLowerCase() : row.text);
+      const swapped = (/** @type {number} */ k) => k + 1 < rows.length && plainText(rows[k]) > plainText(rows[k + 1]);
+      const letters = (/** @type {Row} */ row) => row.text.replace(/\p{Nd}/gu, "");
+      i = rows.findIndex((row, k) => swapped(k) && letters(row) === letters(rows[k + 1]));
+      if (i < 0) i = rows.findIndex((_, k) => swapped(k));
+    }
     if (i < 0) i = Math.min(1, rows.length - 1);
     for (const [id, el] of elements.ordable) el.classList.toggle("chosen", rows[i]?.id === id);
     const keysPanel = $("keys");
@@ -403,10 +459,13 @@ export function initSortOff() {
     if (!rows.length) return;
     const a = rows[i];
     const b = rows[i + 1] ?? rows[i - 1];
+    const keyA = keyOf(a.text);
+    const keyB = b ? keyOf(b.text) : "";
+    const differAt = b ? firstDifference(keyA, keyB) : -1;
     $("key-a-name").textContent = a.text;
-    showKey($("key-a"), keyOf(a.text));
+    showKey($("key-a"), keyA, differAt);
     $("key-b-name").textContent = b ? b.text : "";
-    showKey($("key-b"), b ? keyOf(b.text) : "");
+    showKey($("key-b"), keyB, differAt);
     $("key-b").parentElement.hidden = $("key-b-name").hidden = !b;
     if (b) {
       const [first, second] = rows.indexOf(b) > i ? [a, b] : [b, a];
@@ -415,7 +474,7 @@ export function initSortOff() {
       $("key-check").textContent =
         `${plain ? "✓" : "✗"} key(${first.text}) ${plain ? "<" : ">"} key(${second.text}) by plain comparison, ` +
         `just as ${ignoreCase ? "compareNaturalIgnoringCase" : "compareNatural"} puts ${first.text} ` +
-        `${natural ? "first" : "second"}.`;
+        `${natural ? "first" : "second"}${differAt >= 0 ? ", deciding at the highlighted code points" : ""}.`;
     } else {
       $("key-check").textContent = "";
     }

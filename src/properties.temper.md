@@ -27,8 +27,8 @@ every run, and its numbers stay small enough to never overflow.
     }
 
 ASCII digits and zeros, Arabic-Indic and fullwidth digits, letters in
-both cases (including `ß`, `ẞ`, Greek sigmas and Cyrillic), and a space,
-a dot and a dash.
+both cases (including `ß`, `ẞ`, Greek sigmas, and Cyrillic), and a space,
+a dot, and a dash.
 
     let alphabet: List<Int> = [
       char'0', char'0', char'1', char'2', char'9',

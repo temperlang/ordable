@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ordable: natural sorting for every language</title>
-  <meta name="description" content="Sorts strings the way people expect, file2 before file10, with the same results in C++, C#, Java, JavaScript, Lua, Python and Rust.">
+  <meta name="description" content="Sorts strings the way people expect, file2 before file10, with the same results in C++, C#, Java, JavaScript, Lua, Python, and Rust.">
   <link rel="stylesheet" href="style.css">
   <script type="importmap">
     {
@@ -25,8 +25,8 @@
         </div>
         <p class="lead">
           Sorts the way people expect: <code>file2</code> before
-          <code>file10</code>, in C++, C#, Java, JavaScript, Lua, Python and
-          Rust.
+          <code>file10</code>, in C++, C#, Java, JavaScript, Lua, Python,
+          and Rust.
         </p>
         <nav>
           <a href="#sort">Try it</a>
@@ -56,7 +56,7 @@
       </p>
       <div id="samples" class="chips" role="group" aria-label="Sample lists"></div>
       <div class="controls">
-        <button type="button" id="ignore-case" class="switch" role="switch" aria-checked="false">
+        <button type="button" id="ignore-case" class="switch" role="switch" aria-checked="true">
           <span class="knob" aria-hidden="true"></span>Ignore case
         </button>
         <button type="button" id="edit-list" class="pill" aria-expanded="false" aria-controls="edit-box">Edit list</button>
@@ -67,7 +67,12 @@
         <textarea id="edit-text" rows="8" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
       </div>
       <p class="input-line"><span class="input-label">Input:</span> <span id="input-order"></span></p>
-      <div class="columns" id="columns">
+      <div class="compare-with" role="group" aria-label="Compare Ordable with">
+        <span>Compare with</span>
+        <button type="button" class="pill" data-compare="plain" aria-pressed="true">Plain sort</button>
+        <button type="button" class="pill" data-compare="intl" aria-pressed="false">Intl.Collator</button>
+      </div>
+      <div class="columns" id="columns" data-compare="plain">
         <div class="col" id="col-plain">
           <div class="col-head">
             <h3>Plain sort</h3>
@@ -104,7 +109,10 @@
         <p class="keys-intro">
           Click an Ordable row. Its natural key is a string that sorts by
           plain comparison exactly as the row sorts naturally. Code points in
-          hex; <span class="sep">1</span> separates levels.
+          hex; <span class="sep">1</span> separates levels. A number goes in
+          as its count of digits, then its digits, so 9 (one digit) comes
+          before 10 (two), however they're written; the highlight marks
+          where two keys first differ.
         </p>
         <dl class="key-pair">
           <dt id="key-a-name"></dt>
@@ -128,12 +136,12 @@
       <p>
         Edit and run JavaScript using <code>sortNatural</code>,
         <code>compareNatural</code>, <code>sortNaturalByKey</code>,
-        <code>naturalKey</code> and their <code>IgnoringCase</code> forms.
+        <code>naturalKey</code>, and their <code>IgnoringCase</code> forms.
         Ctrl+Enter runs it too.
       </p>
       <p class="more">
         Using another language? <a href="#code">See below for the same API
-        in C++, C#, Java, Lua, Python and Rust</a>, as read-only example
+        in C++, C#, Java, Lua, Python, and Rust</a>, as read-only example
         programs.
       </p>
       <div class="code-label editable" aria-hidden="true">✎ Editable JavaScript</div>

@@ -543,6 +543,15 @@ ol.rows li.tie::after {
   overflow-wrap: anywhere;
 }
 
+/* Where two keys first differ, which decides their order. */
+.differ {
+  padding: 0 0.15em;
+  border-radius: 4px;
+  color: var(--text);
+  background: color-mix(in oklab, var(--accent) 28%, transparent);
+  font-weight: 700;
+}
+
 .sep {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-weight: 700;
@@ -561,8 +570,43 @@ ol.rows li.tie::after {
   overflow-wrap: anywhere;
 }
 
-/* Phones: the hero stacks, and the columns get tighter. */
+/* Wider screens show all three columns, so there's nothing to choose. */
+.compare-with {
+  display: none;
+}
+
+/* Phones: the hero stacks, and Ordable's column sits beside one other,
+   chosen above the columns. */
 @media (max-width: 720px) {
+  .compare-with {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.6rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .compare-with button[aria-pressed="true"] {
+    color: var(--bg);
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .columns[data-compare="plain"] #col-intl,
+  .columns[data-compare="intl"] #col-plain {
+    display: none;
+  }
+
+  #col-ordable {
+    order: 1;
+  }
+
   .hero {
     padding-top: 2rem;
   }
@@ -902,7 +946,8 @@ footer {
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 20;
+  /* Above an open card, so the badges it would cover stay reachable. */
+  z-index: 26;
 }
 
 .dev-badge {
@@ -1076,8 +1121,27 @@ footer {
   cursor: pointer;
 }
 
-/* Phones: the card is a sheet along the bottom, above the switch. */
+/* Phones: the switch shrinks to its icon, the page leaves room to scroll
+   anything clear of it, and the card is a sheet along the bottom, above
+   the switch. */
 @media (max-width: 640px) {
+  .dev-toggle {
+    padding: 0.35rem;
+  }
+
+  .dev-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  body {
+    padding-bottom: 4rem;
+  }
+
   .dev-card {
     position: fixed;
     left: 0.75rem;

@@ -37,7 +37,7 @@ Whether `c` is a digit in the run starting at `zero`.
 ## Case Folding
 
 Folds `c` for comparing without case, with Unicode's simple case folding:
-one code point to one, mostly to lowercase, so `Σ`, `σ` and `ς` all fold
+one code point to one, mostly to lowercase, so `Σ`, `σ`, and `ς` all fold
 to `σ`, and the Kelvin sign `K` to `k`. Full folding, which turns `ß`
 into `ss`, would change lengths and is left out. ASCII is checked first,
 and the rest is a binary search over the runs in `foldRuns`.
@@ -46,7 +46,7 @@ and the rest is a binary search over the runs in `foldRuns`.
       if (c < 0x80) {
         return if (c >= char'A' && c <= char'Z') { c + 32 } else { c };
       }
-      // Runs are four numbers each: start, count, stride and delta.
+      // Runs are four numbers each: start, count, stride, and delta.
       var low = 0;
       var high = foldRuns.length / 4;
       while (high - low > 1) {
@@ -130,7 +130,7 @@ entry, the first being its key, or -1 if there's none.
       assert(digitZero(char'9') == char'0');
       assert(digitZero(char'a') == -1);
       assert(digitZero(0x2F) == -1);
-      // Arabic-Indic, Devanagari and fullwidth digits.
+      // Arabic-Indic, Devanagari, and fullwidth digits.
       assert(digitZero(0x662) == 0x660);
       assert(digitZero(0x96F) == 0x966);
       assert(digitZero(0xFF15) == 0xFF10);
