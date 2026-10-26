@@ -59,7 +59,8 @@ so Ordable stays below 1.0 until that's decided.
   tables so people can choose well.
 - **Then:** a showcase page, where you paste lines and see natural order
   beside plain sorting, in every language.
-- **Before 1.0:** decide where Unicode tables live.
+- **Before 1.0:** decide where Unicode tables live, and be sure we love
+  the natural key format, since stored keys depend on it.
 
 ## Languages
 
