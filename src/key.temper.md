@@ -159,6 +159,34 @@ with code points far past the separator's shift.
       );
     }
 
+Exact keys, since stored keys depend on the layout staying the same.
+Code points are in hexadecimal.
+
+    let keyCodes(key: String): String {
+      let codes = new ListBuilder<String>();
+      var i = String.begin;
+      while (key.hasIndex(i)) {
+        codes.add(key[i].toString(16));
+        i = key.next(i);
+      }
+      codes.toList().join(" ") { c => c }
+    }
+
+    test("exact keys") {
+      assert(keyCodes(naturalKey("")) == "1 1");
+      assert(keyCodes(naturalKey("file10")) == "69 6c 6f 68 35 34 33 1 33 1 33");
+      // A run's leading zeros go after the first separator.
+      assert(keyCodes(naturalKey("a007")) == "64 34 3a 1 35 1 33");
+      // Digits in another script, whose zero goes after the second separator.
+      assert(keyCodes(naturalKey("x\u{662}\u{661}")) == "7b 35 35 34 1 33 1 663");
+      // A count of 10 digits is 9 then 1.
+      assert(keyCodes(naturalKey("1234567890")) == "3c 34 34 35 36 37 38 39 3a 3b 3c 33 1 33 1 33");
+      // Ignoring case, the characters as they are come after a third separator.
+      assert(keyCodes(naturalKeyIgnoringCase("Ab")) == "64 65 1 1 1 44 65");
+      // Past U+D7FB: U+D7FF, then two digits in base 0x7F00 from U+0100.
+      assert(keyCodes(naturalKey("\u{1F600}")) == "d7ff 102 2104 1 1");
+    }
+
     test("keys stay below surrogates and above U+0000") {
       for (let s of ["", "a1", "\u{10FFFF}9", "\u{0}"]) {
         let k = naturalKeyIgnoringCase(s);
