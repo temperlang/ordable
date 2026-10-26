@@ -46,6 +46,10 @@ var big = new[] { "n123456789012345678901234567890", "n9", "n9999999999999999999
 Console.WriteLine($"big numbers: {string.Join(" ", SortNatural(big))}");
 Console.WriteLine($"leading zeros: {string.Join(" ", SortNatural(new[] { "2", "001", "1", "01" }))}");
 
+// Natural keys sort by plain string comparison, as in a database.
+var before = string.CompareOrdinal(NaturalKey("file2"), NaturalKey("file10")) < 0;
+Console.WriteLine($"natural keys, file2 before file10: {(before ? "yes" : "no")}");
+
 Section("3. Sorting your own types");
 
 // SortNaturalByKey sorts any items by a string from each, made once each.

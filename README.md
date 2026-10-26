@@ -16,6 +16,9 @@ compareNaturalIgnoringCase("a", "B"); // Negative: a comes first
 
 // Any items, by a string from each, such as files by name.
 sortNaturalByKey(files) { file => file.name };
+
+// A string that sorts naturally by plain comparison, as in a database.
+naturalKey("file10"); // Sorts after naturalKey("file2")
 ```
 
 Also: a [tour](demos/README.md) of the whole API in each language, with
@@ -45,12 +48,12 @@ so Ordable stays below 1.0 until that's decided.
   sorting by key, decimal digits in any script, and Unicode case folding.
 - **Compared** with the usual tools: see
   [docs/comparisons.md](docs/comparisons.md).
-- **Next:** speed. A natural sort key (a string per input that sorts
-  naturally under plain string comparison), used automatically when
-  sorting big lists and also exposed, so Python can sort by key and
-  databases can `ORDER BY` it. Then the best defaults, smart and fast,
-  and options beside them: accents by base letter, `ß` as `ss` when
-  ignoring case, maybe signed and decimal numbers.
+- **Done:** natural sort keys (`naturalKey`), which `sortNatural` uses
+  for lists past a few items, and which Python can sort by and databases
+  can `ORDER BY`.
+- **Next:** the best defaults, smart and fast, and options beside them:
+  accents by base letter, `ß` as `ss` when ignoring case, maybe signed
+  and decimal numbers.
 - **A spec:** the source as a readable specification of the default
   order and every option, with its tests beside it, and comparison
   tables so people can choose well.

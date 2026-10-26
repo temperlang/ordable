@@ -14,6 +14,7 @@
 
 using ordable::compareNatural;
 using ordable::compareNaturalIgnoringCase;
+using ordable::naturalKey;
 using ordable::sortNatural;
 using ordable::sortNaturalByKey;
 using ordable::sortNaturalIgnoringCase;
@@ -76,6 +77,10 @@ int main() {
   auto big = list({"n123456789012345678901234567890", "n9", "n99999999999999999999"});
   std::cout << "big numbers: " << join(*sortNatural(big)) << "\n";
   std::cout << "leading zeros: " << join(*sortNatural(list({"2", "001", "1", "01"}))) << "\n";
+
+  // Natural keys sort by plain string comparison, as in a database.
+  bool before = naturalKey("file2") < naturalKey("file10");
+  std::cout << "natural keys, file2 before file10: " << (before ? "yes" : "no") << "\n";
 
   section("3. Sorting your own types");
 

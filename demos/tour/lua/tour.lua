@@ -45,6 +45,9 @@ local big = { "n123456789012345678901234567890", "n9", "n99999999999999999999" }
 print("big numbers: " .. table.concat(sortNatural(big), " "))
 print("leading zeros: " .. table.concat(sortNatural({ "2", "001", "1", "01" }), " "))
 
+-- Natural keys sort by plain string comparison, as in a database.
+print("natural keys, file2 before file10: " .. (ordable.naturalKey("file2") < ordable.naturalKey("file10") and "yes" or "no"))
+
 section("3. Sorting your own types")
 
 -- sortNaturalByKey sorts any items by a string from each, made once each.
