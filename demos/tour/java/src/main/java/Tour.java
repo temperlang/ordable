@@ -32,7 +32,7 @@ public class Tour {
 
         // Negative means the first comes first, positive the second, and 0 only
         // for the same string.
-        String[][] pairs = {{"file2", "file10"}, {"x01", "x1"}, {"1.9", "1.10"}, {"a", "B"}, {"file10", "file10"}};
+        String[][] pairs = {{"file2", "file10"}, {"x01", "x1"}, {"1.9", "1.10"}, {"file٢", "file10"}, {"a", "B"}, {"file10", "file10"}};
         for (String[] p : pairs) {
             System.out.println(p[0] + " vs " + p[1] + ": " + order(compareNatural(p[0], p[1])));
         }

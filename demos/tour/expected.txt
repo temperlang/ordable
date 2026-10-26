@@ -4,6 +4,7 @@
 file2 vs file10: before
 x01 vs x1: after
 1.9 vs 1.10: before
+file٢ vs file10: before
 a vs B: after
 file10 vs file10: same
 a vs B, ignoring case: before
