@@ -85,6 +85,7 @@ a dot, and a dash.
       checkTotalOrder(test) { a, b => compareNatural(a, b) };
     }
 
-    test("total order ignoring case") { test =>
-      checkTotalOrder(test) { a, b => compareNaturalIgnoringCase(a, b) };
+    test("total order with each option") { test =>
+      checkTotalOrder(test) { a, b => upperOrder.compare(a, b) };
+      checkTotalOrder(test) { a, b => sensitiveOrder.compare(a, b) };
     }

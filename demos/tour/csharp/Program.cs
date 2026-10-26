@@ -6,9 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Ordable;
 using static Ordable.OrdableGlobal;
 
-static string Order(int n) => n < 0 ? "before" : n > 0 ? "after" : "same";
+static string Relation(int n) => n < 0 ? "before" : n > 0 ? "after" : "same";
 
 static void Section(string title)
 {
@@ -21,23 +22,20 @@ Console.WriteLine("# Ordable tour");
 Section("1. Comparing");
 
 // Negative means the first comes first, positive the second, and 0 only for
-// the same string.
-foreach (var (a, b) in new[] { ("file2", "file10"), ("x01", "x1"), ("1.9", "1.10"), ("file٢", "file10"), ("a", "B"), ("file10", "file10") })  // snippet: compare
+// the same string. Case only breaks ties, lowercase first.
+var pairs = new[] {  // snippet: compare
+    ("file2", "file10"), ("x01", "x1"), ("1.9", "1.10"), ("file٢", "file10"),  // snippet: compare
+    ("a", "B"), ("a", "A"), ("file10", "file10"),  // snippet: compare
+};  // snippet: compare
+foreach (var (a, b) in pairs)  // snippet: compare
 {  // snippet: compare
-    Console.WriteLine($"{a} vs {b}: {Order(CompareNatural(a, b))}");  // snippet: compare
+    Console.WriteLine($"{a} vs {b}: {Relation(CompareNatural(a, b))}");  // snippet: compare
 }  // snippet: compare
-
-// Ignoring case, letters compare as lowercase, and case only breaks ties.
-foreach (var (a, b) in new[] { ("a", "B"), ("A", "a") })
-{
-    Console.WriteLine($"{a} vs {b}, ignoring case: {Order(CompareNaturalIgnoringCase(a, b))}");
-}
 
 Section("2. Sorting strings");
 
-var files = new[] { "img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png" };  // snippet: sort, ignore-case
+var files = new[] { "img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png" };  // snippet: sort, options
 Console.WriteLine($"files: {string.Join(" ", SortNatural(files))}");  // snippet: sort
-Console.WriteLine($"ignoring case: {string.Join(" ", SortNaturalIgnoringCase(files))}");  // snippet: ignore-case
 
 // Numbers of any length, and leading zeros only breaking ties.
 var versions = new[] { "v1.10", "v2.0", "v1.9", "v10.1", "v1.2" };  // snippet: numbers
@@ -52,7 +50,16 @@ Console.WriteLine($"natural keys, file2 before file10: {(before ? "yes" : "no")}
 // Keys are the same in every language, so they can be stored and shared.
 Console.WriteLine($"key for file10: {string.Join(" ", NaturalKey("file10").Select(c => ((int)c).ToString("X")))}");  // snippet: keys
 
-Section("3. Sorting your own types");
+Section("3. Options");
+
+// An Order has the same functions as methods, with options as named
+// arguments: here uppercase first, then case-sensitive.
+var upperFirst = new Order(upperFirst: true);  // snippet: options
+Console.WriteLine($"uppercase first: {string.Join(" ", upperFirst.Sort(files))}");  // snippet: options
+var caseSensitive = new Order(caseSensitive: true);  // snippet: options
+Console.WriteLine($"case-sensitive: {string.Join(" ", caseSensitive.Sort(files))}");  // snippet: options
+
+Section("4. Sorting your own types");
 
 // SortNaturalByKey sorts any items by a string from each, made once each.
 var tracks = new[] { new Track("Track 10: Outro", 95), new Track("Track 1: Intro", 61), new Track("Track 2: Rise", 184) };  // snippet: by-key

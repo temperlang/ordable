@@ -12,18 +12,13 @@ Each returns a negative number if `a` comes first, positive if `b` does, and
 0 only if the strings are equal. That makes the order total, so sorting
 gives the same result whatever order the input was in.
 
-Code points compare as they are, so `B` comes before `a`.
+By default, as people expect: case only breaks ties, lowercase first, so
+`a` and `A` come before `B`, in any script with case (`é` and `É`, `Σ` and
+`σ`), and accents only break ties before that, so `é` sorts with `e`. See
+[options](#options) for other orders.
 
     export let compareNatural(a: String, b: String): Int {
-      compareWith(a, b, false)
-    }
-
-The same, but ignoring case, so `a` comes before `B`, in any script with
-case: `é` and `É`, `Σ` and `σ`. Strings that differ only in case still
-don't tie: uppercase comes first, as in `A` before `a`.
-
-    export let compareNaturalIgnoringCase(a: String, b: String): Int {
-      compareWith(a, b, true)
+      natural.compare(a, b)
     }
 
 ## Sorting
@@ -32,24 +27,17 @@ A sorted copy, in natural order. Sorting is stable, though with a total
 order that only matters for equal strings.
 
     export let sortNatural(strings: List<String>): List<String> {
-      sortByKeys(strings, strings, false)
-    }
-
-    export let sortNaturalIgnoringCase(strings: List<String>): List<String> {
-      sortByKeys(strings, strings, true)
+      natural.sort(strings)
     }
 
 A sorted copy of any items, in the natural order of a string from each,
 such as files by name: `sortNaturalByKey(files) { file => file.name }`.
 Each key is made once, not once per comparison, so `key` can do some work.
-Items with the same key keep their order.
+Items with the same key keep their order. An `order` with
+[options](#options) changes the order.
 
-    export let sortNaturalByKey<T>(items: List<T>, key: fn (T): String): List<T> {
-      sortByKeys(items, items.map(key), false)
-    }
-
-    export let sortNaturalByKeyIgnoringCase<T>(items: List<T>, key: fn (T): String): List<T> {
-      sortByKeys(items, items.map(key), true)
+    export let sortNaturalByKey<T>(items: List<T>, key: fn (T): String, order: Order = natural): List<T> {
+      sortByKeys(items, items.map(key), order)
     }
 
 Sorts positions by their keys, then picks the items in that order. Past
@@ -57,19 +45,53 @@ a few items, it first makes each key's [natural sort key](key.temper.md),
 so each comparison is a plain string comparison instead of a natural
 one.
 
-    let sortByKeys<T>(items: List<T>, keys: List<String>, ignoreCase: Boolean): List<T> {
+    let sortByKeys<T>(items: List<T>, keys: List<String>, order: Order): List<T> {
       let positions = new ListBuilder<Int>();
       for (var i = 0; i < items.length; i += 1) {
         positions.add(i);
       }
       let sorted = if (items.length < sortKeysFrom) {
-        positions.toList().sorted { a, b => compareWith(keys[a], keys[b], ignoreCase) }
+        positions.toList().sorted { a, b => compareWith(keys[a], keys[b], order) }
       } else {
-        let natural: List<String> = keys.map { k => keyWith(k, ignoreCase) };
-        positions.toList().sorted { a, b => natural[a] <=> natural[b] }
+        let naturalKeys: List<String> = keys.map { k => keyWith(k, order) };
+        positions.toList().sorted { a, b => naturalKeys[a] <=> naturalKeys[b] }
       };
       sorted.map { i => items[i] }
     }
+
+## Options
+
+An `Order` is natural order with options, with `compare`, `sort`, and
+`key` as methods, and `sortNaturalByKey` takes one too. (A generic
+`sortByKey` method would fit here, but Temper's C++ backend can't yet
+compile a generic method that calls a generic function, so it waits.) Every option has a default, so an object literal names only what
+changes, such as `{ upperFirst: true }`.
+
+- **`upperFirst`:** when strings differ only in case, uppercase comes
+  first, `A` before `a`. By default lowercase does, as in most other
+  sorts.
+- **`caseSensitive`:** case counts as much as the letter, as in plain
+  sorting, so every `B` comes before every `a`, and `ß` doesn't match
+  `ss`. Then letters compare by code point, so `upperFirst` has no say.
+
+The options, and the functions as methods:
+
+    export class Order(
+      public upperFirst: Boolean = false,
+      public caseSensitive: Boolean = false,
+    ) {
+      public compare(a: String, b: String): Int { compareWith(a, b, this) }
+
+      public sort(strings: List<String>): List<String> {
+        sortByKeys(strings, strings, this)
+      }
+
+      public key(s: String): String { keyWith(s, this) }
+    }
+
+The default order, behind the functions above.
+
+    let natural: Order = new Order(false, false);
 
     let sortKeysFrom = 16;
 
@@ -80,8 +102,8 @@ tie:
 
 1. **Letters and numbers.** Both strings are walked together, a
    character or a run of digits at a time. Accents don't count at this
-   level, so `é` sorts with `e`, and when ignoring case, letters fold
-   fully, so `ß` matches `ss` and `Σ` matches `σ` and `ς`. Numbers
+   level, so `é` sorts with `e`, and letters fold fully, so `ß` matches
+   `ss`, and `Σ` matches `σ` and `ς` (unless case-sensitive). Numbers
    compare by value without converting them, so any number of digits
    works without overflow: after skipping leading zeros, more digits
    means bigger, and equal lengths compare digit by digit. A run of
@@ -92,10 +114,17 @@ tie:
    `01`.
 3. **Digit scripts:** the first difference, by code point, so `1` before
    `١`.
-4. **Accents:** the characters other than digits, with case folded when
-   ignoring case, so `e` before `é`, and `ss` before `ß`.
-5. **Case,** when ignoring case: the first difference, uppercase first,
-   so `E` before `e`.
+4. **Accents:** the characters other than digits, case folded (unless
+   case-sensitive), so `e` before `é`, and `ss` before `ß`.
+5. **Case:** the first character that's not folded in one string but is
+   in the other, lowercase first (or uppercase, with `upperFirst`), so
+   `e` before `E`.
+6. **Code points:** the first difference, for characters that fold the
+   same and agree in case but still differ, such as `K` and the Kelvin
+   sign `K`.
+
+Case-sensitive, letters aren't folded, so the first and fourth levels
+decide everything, and the last two never come up.
 
 Two strings tie at every level only if they're the same, which keeps the
 order total ([order properties](properties.temper.md)).
@@ -103,18 +132,20 @@ order total ([order properties](properties.temper.md)).
 Accents come from Unicode's canonical decompositions, and case folding
 is Unicode's ([unicode](unicode.temper.md)).
 
-    let compareWith(a: String, b: String, ignoreCase: Boolean): Int {
-      let ra = new Reader(a, ignoreCase);
-      let rb = new Reader(b, ignoreCase);
+    let compareWith(a: String, b: String, order: Order): Int {
+      let fold = !order.caseSensitive;
+      var i = String.begin;
+      var j = String.begin;
+      // Where the rest of a full folding (ß's second s) is in `fullFolds`, or -1.
+      var restA = -1;
+      var restB = -1;
       var zeros = 0;
       var scripts = 0;
-      while (ra.more() && rb.more()) {
-        if (!ra.folding() && !rb.folding()) {
-          let zeroA = digitZero(a[ra.at]);
-          let zeroB = digitZero(b[rb.at]);
+      while ((restA >= 0 || a.hasIndex(i)) && (restB >= 0 || b.hasIndex(j))) {
+        if (restA < 0 && restB < 0) {
+          let zeroA = digitZero(a[i]);
+          let zeroB = digitZero(b[j]);
           if (zeroA >= 0 && zeroB >= 0) {
-            var i = ra.at;
-            var j = rb.at;
             var zerosA = 0;
             while (a.hasIndex(i) && a[i] == zeroA) {
               zerosA += 1;
@@ -144,85 +175,114 @@ is Unicode's ([unicode](unicode.temper.md)).
             if (scripts == 0) {
               scripts = zeroA - zeroB;
             }
-            ra.at = i;
-            rb.at = j;
             continue;
           }
         }
-        let diff = ra.nextUnit() - rb.nextUnit();
-        if (diff != 0) {
-          return sign(diff);
+        var unitA = 0;
+        if (restA >= 0) {
+          unitA = fullFolds[restA];
+          restA = nextRest(restA);
+        } else {
+          let c = a[i];
+          i = a.next(i);
+          unitA = firstUnit(c, fold);
+          restA = foldRest(c, fold);
+        }
+        var unitB = 0;
+        if (restB >= 0) {
+          unitB = fullFolds[restB];
+          restB = nextRest(restB);
+        } else {
+          let c = b[j];
+          j = b.next(j);
+          unitB = firstUnit(c, fold);
+          restB = foldRest(c, fold);
+        }
+        if (unitA != unitB) {
+          return sign(unitA - unitB);
         }
       }
-      if (ra.more()) {
+      if (restA >= 0 || a.hasIndex(i)) {
         1
-      } else if (rb.more()) {
+      } else if (restB >= 0 || b.hasIndex(j)) {
         -1
       } else if (zeros != 0) {
         sign(zeros)
       } else if (scripts != 0) {
         sign(scripts)
       } else {
-        compareMarks(a, b, ignoreCase)
+        compareMarks(a, b, order)
       }
     }
 
-Reads a string's units for the first level: a digit as its ASCII digit,
-and anything else as its base letter, folded fully when ignoring case,
-which may give more than one unit, as `s s` for `ß`.
+The first level's unit for `c`: a digit as its ASCII digit, and anything
+else as its base letter, folded fully when `fold`. ASCII needs no
+tables. A full folding can give more than one unit, as `s s` for `ß`:
+this is the first, and `foldRest` says where the rest are. (Plain
+variables, not an object per string, keep this fast in every language.)
 
-    class Reader(private s: String, private ignoreCase: Boolean) {
-      public var at: StringIndex = String.begin;
-      // The next unit of a full folding, in `fullFolds`, or -1.
-      private var pending: Int = -1;
-
-      public more(): Boolean { pending >= 0 || s.hasIndex(at) }
-
-      public folding(): Boolean { pending >= 0 }
-
-      public nextUnit(): Int {
-        if (pending >= 0) {
-          let unit = fullFolds[pending];
-          pending = if ((pending + 1) % 4 != 0 && fullFolds[pending + 1] != 0) { pending + 1 } else { -1 };
-          return unit;
-        }
-        let c = s[at];
-        at = s.next(at);
-        let zero = digitZero(c);
-        if (zero >= 0) {
-          return char'0' + (c - zero);
-        }
-        let base = baseLetter(c);
-        if (!ignoreCase) {
-          return base;
-        }
-        if (base >= 0x80) {
-          let entry = findEntry(fullFolds, 4, base);
-          if (entry >= 0) {
-            pending = if (fullFolds[entry + 2] != 0) { entry + 2 } else { -1 };
-            return fullFolds[entry + 1];
-          }
-        }
-        foldCase(base)
+    let firstUnit(c: Int, fold: Boolean): Int {
+      if (c < 0x80) {
+        return if (fold) { foldCase(c) } else { c };
       }
+      let zero = digitZero(c);
+      if (zero >= 0) {
+        return char'0' + (c - zero);
+      }
+      let base = baseLetter(c);
+      if (!fold) {
+        return base;
+      }
+      if (base >= 0x80) {
+        let entry = findEntry(fullFolds, 4, base);
+        if (entry >= 0) {
+          return fullFolds[entry + 1];
+        }
+      }
+      foldCase(base)
     }
 
-The last two levels, accents and then case, over the characters other
-than digits, which by then are the same in both strings.
+Where the rest of `c`'s full folding is in `fullFolds`, or -1 if there's
+none; then `nextRest` steps through it.
 
-    let compareMarks(a: String, b: String, ignoreCase: Boolean): Int {
+    let foldRest(c: Int, fold: Boolean): Int {
+      if (!fold || c < 0x80) {
+        return -1;
+      }
+      let base = baseLetter(c);
+      if (base < 0x80) {
+        return -1;
+      }
+      let entry = findEntry(fullFolds, 4, base);
+      if (entry >= 0 && fullFolds[entry + 2] != 0) { entry + 2 } else { -1 }
+    }
+
+    let nextRest(at: Int): Int {
+      if (((at + 1) % 4 orelse panic()) != 0 && fullFolds[at + 1] != 0) { at + 1 } else { -1 }
+    }
+
+The last levels, from accents on, over the characters other than
+digits, which by then are the same in both strings: the first
+difference in accents decides, else the first in case, else the first
+in code points.
+
+    let compareMarks(a: String, b: String, order: Order): Int {
       var i = skipDigits(a, String.begin);
       var j = skipDigits(b, String.begin);
       var cases = 0;
+      var codes = 0;
       while (a.hasIndex(i) && b.hasIndex(j)) {
         let x = a[i];
         let y = b[j];
-        let diff = markKey(x, ignoreCase) - markKey(y, ignoreCase);
+        let diff = markKey(x, order) - markKey(y, order);
         if (diff != 0) {
           return sign(diff);
         }
         if (cases == 0) {
-          cases = x - y;
+          cases = caseKey(x, order) - caseKey(y, order);
+        }
+        if (codes == 0) {
+          codes = x - y;
         }
         i = skipDigits(a, a.next(i));
         j = skipDigits(b, b.next(j));
@@ -231,13 +291,34 @@ than digits, which by then are the same in both strings.
         1
       } else if (b.hasIndex(j)) {
         -1
-      } else {
+      } else if (cases != 0) {
         sign(cases)
+      } else {
+        sign(codes)
       }
     }
 
-    let markKey(c: Int, ignoreCase: Boolean): Int {
-      if (ignoreCase) { foldCase(c) } else { c }
+A character for the accents level: case folded, unless case-sensitive.
+
+    let markKey(c: Int, order: Order): Int {
+      if (order.caseSensitive) { c } else { foldCase(c) }
+    }
+
+A character's case for the case level, 0 or 1, the one that comes first
+being 0: lowercase (a character its own folding) by default, else
+uppercase. Case-sensitive, it's always 0, since the code point already
+decided.
+
+    let caseKey(c: Int, order: Order): Int {
+      if (order.caseSensitive) {
+        return 0;
+      }
+      let lower = foldCase(c) == c;
+      if (lower) {
+        if (order.upperFirst) { 1 } else { 0 }
+      } else {
+        if (order.upperFirst) { 0 } else { 1 }
+      }
     }
 
     let skipDigits(s: String, start: StringIndex): StringIndex {
@@ -267,10 +348,13 @@ than digits, which by then are the same in both strings.
       assert(compareNatural(b, a) > 0) { "${b} not after ${a}" }
     }
 
-    let assertBeforeIgnoringCase(test: Test, a: String, b: String): Void {
-      assert(compareNaturalIgnoringCase(a, b) < 0) { "${a} not before ${b}" }
-      assert(compareNaturalIgnoringCase(b, a) > 0) { "${b} not after ${a}" }
+    let assertBeforeIn(test: Test, order: Order, a: String, b: String): Void {
+      assert(order.compare(a, b) < 0) { "${a} not before ${b}" }
+      assert(order.compare(b, a) > 0) { "${b} not after ${a}" }
     }
+
+    let sensitiveOrder: Order = { caseSensitive: true };
+    let upperOrder: Order = { upperFirst: true };
 
     test("numbers compare by value") { test =>
       assertBefore(test, "file2", "file10");
@@ -301,23 +385,38 @@ than digits, which by then are the same in both strings.
       assertBefore(test, "a1", "aa");
     }
 
-    test("case") { test =>
-      assertBefore(test, "B", "a");
-      assertBeforeIgnoringCase(test, "a", "B");
-      assertBeforeIgnoringCase(test, "A", "a");
-      assertBeforeIgnoringCase(test, "File2", "file10");
-      assert(compareNaturalIgnoringCase("Ab", "Ab") == 0);
+    test("case only breaks ties, lowercase first") { test =>
+      assertBefore(test, "a", "B");
+      assertBefore(test, "a", "A");
+      assertBefore(test, "A", "b");
+      assertBefore(test, "File2", "file10");
+      assert(compareNatural("Ab", "Ab") == 0);
+    }
+
+    test("uppercase first") { test =>
+      assertBeforeIn(test, upperOrder, "A", "a");
+      assertBeforeIn(test, upperOrder, "a", "B");
+      assertBeforeIn(test, upperOrder, "File2", "file10");
+    }
+
+    test("case-sensitive") { test =>
+      // Case counts as much as the letter, by code point: B before a.
+      assertBeforeIn(test, sensitiveOrder, "B", "a");
+      assertBeforeIn(test, sensitiveOrder, "IMG10", "img2");
+      assertBeforeIn(test, sensitiveOrder, "img2", "img10");
+      // ß is its own letter, after z.
+      assertBeforeIn(test, sensitiveOrder, "Straz", "Straße");
     }
 
     test("case beyond ASCII") { test =>
-      // É matches é; Σ, σ and ς match; Ж matches ж.
-      assertBeforeIgnoringCase(test, "\u{C9}cole2", "\u{E9}cole10");
-      assertBeforeIgnoringCase(test, "\u{C9}", "z");
-      assertBeforeIgnoringCase(test, "\u{3A3}2", "\u{3C3}10");
-      assertBeforeIgnoringCase(test, "\u{3C2}1", "\u{3A3}2");
-      assertBeforeIgnoringCase(test, "\u{416}a", "\u{436}b");
-      // Same apart from case: the code point breaks the tie, so uppercase first.
-      assertBeforeIgnoringCase(test, "\u{3A3}", "\u{3C3}");
+      // É matches é; Σ, σ, and ς match; Ж matches ж.
+      assertBefore(test, "\u{C9}cole2", "\u{E9}cole10");
+      assertBefore(test, "\u{C9}", "z");
+      assertBefore(test, "\u{3A3}2", "\u{3C3}10");
+      assertBefore(test, "\u{3C2}1", "\u{3A3}2");
+      assertBefore(test, "\u{416}a", "\u{436}b");
+      // Same apart from case: lowercase first.
+      assertBefore(test, "\u{3C3}", "\u{3A3}");
     }
 
     test("digits in other scripts against other characters") { test =>
@@ -348,43 +447,43 @@ than digits, which by then are the same in both strings.
       assert(compareNatural("", "") == 0);
       assert(compareNatural("a10b", "a10b") == 0);
       assert(compareNatural("é2", "é10") < 0);
-      assertBefore(test, "e", "é");
-      assertBefore(test, "é", "f");
+      // The Kelvin sign folds to k and is uppercase, as K is, so only the
+      // code point tells them apart.
+      assertBefore(test, "K", "\u{212A}");
     }
 
     test("accents") { test =>
       // Accents only break ties, so é sorts with e, and ǖ with u.
-      assertBefore(test, "e", "é");
       assertBefore(test, "é", "f");
       assertBefore(test, "école2", "ecole10");
       assertBefore(test, "u", "\u{1D6}");
       assertBefore(test, "\u{1D6}", "v");
-      // Ignoring case: E, e, É, é, since accents count before case, and
-      // case puts uppercase first. (Intl.Collator also puts accents first,
-      // but lowercase first.)
-      assertBeforeIgnoringCase(test, "E", "e");
-      assertBeforeIgnoringCase(test, "e", "\u{C9}");
-      assertBeforeIgnoringCase(test, "\u{C9}", "\u{E9}");
-      assertBeforeIgnoringCase(test, "\u{E9}", "f");
+      // Accents count before case: e, E, é, É, as Intl.Collator does.
+      assertBefore(test, "e", "E");
+      assertBefore(test, "E", "\u{E9}");
+      assertBefore(test, "\u{E9}", "\u{C9}");
+      assertBefore(test, "\u{C9}", "f");
+      // With uppercase first: E, e, É, é.
+      assertBeforeIn(test, upperOrder, "E", "e");
+      assertBeforeIn(test, upperOrder, "e", "\u{C9}");
+      assertBeforeIn(test, upperOrder, "\u{C9}", "\u{E9}");
     }
 
-    test("full case folding when ignoring case") { test =>
+    test("full case folding") { test =>
       // ß matches ss, then sorts after it; ﬁ matches fi.
-      assertBeforeIgnoringCase(test, "Strase", "Strasse");
-      assertBeforeIgnoringCase(test, "STRASSE", "Strasse");
-      assertBeforeIgnoringCase(test, "Strasse", "Straße");
-      assertBeforeIgnoringCase(test, "Straße", "Strassen");
-      assertBeforeIgnoringCase(test, "\u{FB01}le2", "file10");
-      // Not when comparing case: ß is its own letter, after z.
-      assertBefore(test, "Straz", "Straße");
+      assertBefore(test, "Strase", "Strasse");
+      assertBefore(test, "Strasse", "STRASSE");
+      assertBefore(test, "STRASSE", "Straße");
+      assertBefore(test, "Straße", "Strassen");
+      assertBefore(test, "\u{FB01}le2", "file10");
     }
 
     test("sorting") { test =>
       let names = ["img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png"];
       let sorted = sortNatural(names);
-      assert(sorted.join(" ") { s => s } == "IMG2.png img1.png img2.png img10.png img12.png");
-      let ignoring = sortNaturalIgnoringCase(names);
-      assert(ignoring.join(" ") { s => s } == "img1.png IMG2.png img2.png img10.png img12.png");
+      assert(sorted.join(" ") { s => s } == "img1.png img2.png IMG2.png img10.png img12.png");
+      let sensitive = sensitiveOrder.sort(names);
+      assert(sensitive.join(" ") { s => s } == "IMG2.png img1.png img2.png img10.png img12.png");
     }
 
     class Track(public title: String, public seconds: Int) {}
@@ -402,9 +501,9 @@ than digits, which by then are the same in both strings.
         track.title
       };
       assert(calls == 4);
-      assert(titles.join(", ") { t => t.title } == "Track 1: Intro, Track 2: Rise again, Track 10: Outro, track 2: Rise");
-      let ignoring = sortNaturalByKeyIgnoringCase(tracks) { track => track.title };
-      assert(ignoring.join(", ") { t => t.title } == "Track 1: Intro, track 2: Rise, Track 2: Rise again, Track 10: Outro");
+      assert(titles.join(", ") { t => t.title } == "Track 1: Intro, track 2: Rise, Track 2: Rise again, Track 10: Outro");
+      let sensitive = sortNaturalByKey(tracks, fn (track: Track): String { track.title }, sensitiveOrder);
+      assert(sensitive.join(", ") { t => t.title } == "Track 1: Intro, Track 2: Rise again, Track 10: Outro, track 2: Rise");
     }
 
 Equal keys keep their order.

@@ -3,14 +3,7 @@
 // The same tour exists for each language Ordable supports, and they all print
 // the same text. See ../README.md for how to run them.
 
-import {
-  compareNatural,
-  compareNaturalIgnoringCase,
-  naturalKey,
-  sortNatural,
-  sortNaturalByKey,
-  sortNaturalIgnoringCase,
-} from "ordable";
+import { Order, compareNatural, naturalKey, sortNatural, sortNaturalByKey } from "ordable";
 
 const order = (n) => (n < 0 ? "before" : n > 0 ? "after" : "same");
 
@@ -24,21 +17,16 @@ console.log("# Ordable tour");
 section("1. Comparing");
 
 // Negative means the first comes first, positive the second, and 0 only for
-// the same string.
-for (const [a, b] of [["file2", "file10"], ["x01", "x1"], ["1.9", "1.10"], ["file٢", "file10"], ["a", "B"], ["file10", "file10"]]) {  // snippet: compare
+// the same string. Case only breaks ties, lowercase first.
+const pairs = [["file2", "file10"], ["x01", "x1"], ["1.9", "1.10"], ["file٢", "file10"], ["a", "B"], ["a", "A"], ["file10", "file10"]];  // snippet: compare
+for (const [a, b] of pairs) {  // snippet: compare
   console.log(`${a} vs ${b}: ${order(compareNatural(a, b))}`);  // snippet: compare
 }  // snippet: compare
 
-// Ignoring case, letters compare as lowercase, and case only breaks ties.
-for (const [a, b] of [["a", "B"], ["A", "a"]]) {
-  console.log(`${a} vs ${b}, ignoring case: ${order(compareNaturalIgnoringCase(a, b))}`);
-}
-
 section("2. Sorting strings");
 
-const files = ["img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png"];  // snippet: sort, ignore-case
+const files = ["img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png"];  // snippet: sort, options
 console.log(`files: ${sortNatural(files).join(" ")}`);  // snippet: sort
-console.log(`ignoring case: ${sortNaturalIgnoringCase(files).join(" ")}`);  // snippet: ignore-case
 
 // Numbers of any length, and leading zeros only breaking ties.
 const versions = ["v1.10", "v2.0", "v1.9", "v10.1", "v1.2"];  // snippet: numbers
@@ -53,7 +41,16 @@ console.log(`natural keys, file2 before file10: ${naturalKey("file2") < naturalK
 const hex = [...naturalKey("file10")].map((c) => c.codePointAt(0).toString(16).toUpperCase());  // snippet: keys
 console.log(`key for file10: ${hex.join(" ")}`);  // snippet: keys
 
-section("3. Sorting your own types");
+section("3. Options");
+
+// An Order has the same functions as methods, with options: here
+// uppercase first, then case-sensitive.
+const upperFirst = new Order(true);  // snippet: options
+console.log(`uppercase first: ${upperFirst.sort(files).join(" ")}`);  // snippet: options
+const caseSensitive = new Order(false, true);  // snippet: options
+console.log(`case-sensitive: ${caseSensitive.sort(files).join(" ")}`);  // snippet: options
+
+section("4. Sorting your own types");
 
 // sortNaturalByKey sorts any items by a string from each, made once each.
 const tracks = [  // snippet: by-key

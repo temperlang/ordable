@@ -41,10 +41,10 @@ const SPOTS = [
     target: () => [...document.querySelectorAll("#samples button")].find((b) => b.textContent === "Versions"),
   },
   {
-    id: "ignore-case",
-    title: "Ignoring case",
-    about: "`sortNaturalIgnoringCase` folds case fully, so ß matches ss. Strings that differ only in case still don't tie: uppercase comes first.",
-    target: () => find("#ignore-case"),
+    id: "options",
+    title: "Options",
+    about: "By default, case only breaks ties, lowercase first. An `Order` with options changes that: `upperFirst`, or `caseSensitive`, where every B comes before every a, as in plain sorting.",
+    target: () => find("#case-sensitive"),
   },
   {
     id: "ties",

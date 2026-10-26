@@ -4,9 +4,8 @@
 -- the same text. See ../README.md for how to run them.
 
 local ordable = require("ordable")
-local compareNatural, compareNaturalIgnoringCase = ordable.compareNatural, ordable.compareNaturalIgnoringCase
-local sortNatural, sortNaturalIgnoringCase = ordable.sortNatural, ordable.sortNaturalIgnoringCase
-local sortNaturalByKey = ordable.sortNaturalByKey
+local compareNatural, sortNatural, sortNaturalByKey = ordable.compareNatural, ordable.sortNatural, ordable.sortNaturalByKey
+local Order = ordable.Order
 
 local function order(n)
   if n < 0 then return "before" elseif n > 0 then return "after" else return "same" end
@@ -22,21 +21,19 @@ print("# Ordable tour")
 section("1. Comparing")
 
 -- Negative means the first comes first, positive the second, and 0 only for
--- the same string.
-for _, pair in ipairs({ { "file2", "file10" }, { "x01", "x1" }, { "1.9", "1.10" }, { "file٢", "file10" }, { "a", "B" }, { "file10", "file10" } }) do  -- snippet: compare
+-- the same string. Case only breaks ties, lowercase first.
+local pairs = {  -- snippet: compare
+  { "file2", "file10" }, { "x01", "x1" }, { "1.9", "1.10" }, { "file٢", "file10" },  -- snippet: compare
+  { "a", "B" }, { "a", "A" }, { "file10", "file10" },  -- snippet: compare
+}  -- snippet: compare
+for _, pair in ipairs(pairs) do  -- snippet: compare
   print(pair[1] .. " vs " .. pair[2] .. ": " .. order(compareNatural(pair[1], pair[2])))  -- snippet: compare
 end  -- snippet: compare
 
--- Ignoring case, letters compare as lowercase, and case only breaks ties.
-for _, pair in ipairs({ { "a", "B" }, { "A", "a" } }) do
-  print(pair[1] .. " vs " .. pair[2] .. ", ignoring case: " .. order(compareNaturalIgnoringCase(pair[1], pair[2])))
-end
-
 section("2. Sorting strings")
 
-local files = { "img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png" }  -- snippet: sort, ignore-case
+local files = { "img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png" }  -- snippet: sort, options
 print("files: " .. table.concat(sortNatural(files), " "))  -- snippet: sort
-print("ignoring case: " .. table.concat(sortNaturalIgnoringCase(files), " "))  -- snippet: ignore-case
 
 -- Numbers of any length, and leading zeros only breaking ties.
 local versions = { "v1.10", "v2.0", "v1.9", "v10.1", "v1.2" }  -- snippet: numbers
@@ -55,7 +52,16 @@ for _, byte in ipairs({ ordable.naturalKey("file10"):byte(1, -1) }) do  -- snipp
 end  -- snippet: keys
 print("key for file10: " .. table.concat(hex, " "))  -- snippet: keys
 
-section("3. Sorting your own types")
+section("3. Options")
+
+-- An Order has the same functions as methods, with options: here
+-- uppercase first, then case-sensitive.
+local upperFirst = Order(true)  -- snippet: options
+print("uppercase first: " .. table.concat(upperFirst:sort(files), " "))  -- snippet: options
+local caseSensitive = Order(false, true)  -- snippet: options
+print("case-sensitive: " .. table.concat(caseSensitive:sort(files), " "))  -- snippet: options
+
+section("4. Sorting your own types")
 
 -- sortNaturalByKey sorts any items by a string from each, made once each.
 local tracks = {  -- snippet: by-key

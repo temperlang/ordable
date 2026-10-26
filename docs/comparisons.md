@@ -33,7 +33,9 @@ identically in all three.
 Since this comparison, Ordable also sorts accented letters with their
 base letter (`e`, then `é`, then `f`), as `Intl.Collator`,
 `natural-orderby`, and `natsort` (ignoring case) do, and matches `ß` with
-`ss` when ignoring case, as `Intl.Collator` and `natsort` do.
+`ss`, as `Intl.Collator` and `natsort` do. Case now only breaks ties by
+default, lowercase first, as in `Intl.Collator`; case-sensitive order is
+an option.
 
 ## Where others do things Ordable doesn't (yet)
 
@@ -47,20 +49,23 @@ These are candidates for options, without changing the defaults.
 ## Speed
 
 Sorting 20,000 file names, median of several runs (one noisy machine, so
-rough). `sortNatural` makes each string's natural sort key once and then
-sorts by plain string comparison; comparing with `compareNatural`
-directly is shown too.
+rough), measured 2026-10-26 with the current defaults: accents, full
+case folding, and case as a tiebreak. `sortNatural` makes each string's
+natural sort key once and then sorts by plain string comparison;
+comparing with `compareNatural` directly is shown too.
 
 | Language | Ordable `sortNatural` | Ordable comparator | Others |
 |---|---|---|---|
-| Python | 1.1 s | 7.3 s | `natsort` 0.2 s as a sort key |
-| JavaScript | 0.06 s | 0.12 s | `Intl.Collator` 0.11 s, `natural-compare` 0.25 s, `natural-orderby` 1.5 s |
-| Rust | 0.06 s | 0.08 s | `natord` 0.02 s, `alphanumeric-sort` 0.01 s |
+| Python | 2.1 s | not measured | `natsort` 0.13 s as a sort key |
+| JavaScript | 0.07–0.08 s | 0.09 s | `Intl.Collator` 0.065 s |
+| Rust | 0.064–0.068 s | 0.07 s | `natord` 0.012 s |
 
-In JavaScript, Ordable now sorts faster than the built-in `Intl.Collator`.
-In Python, most of the remaining time is generated code doing simple
-integer and string steps through helper calls, which Temper itself can
-make faster.
+The defaults do more than they did: before accents and case levels,
+`sortNatural` took 1.1 s in Python and 0.06 s in JavaScript, where it
+beat `Intl.Collator`. In Python, most of the time is generated code doing
+simple integer and string steps through helper calls, which Temper itself
+can make faster, and keys now carry six levels, which a tighter key
+layout before 1.0 could shrink.
 
 A taste of more speed in Rust (2026-10-26): Temper's Rust output shares
 values with `Arc`, so they could cross threads. Converting a copy of
