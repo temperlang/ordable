@@ -15,6 +15,7 @@
 using ordable::compareNatural;
 using ordable::compareNaturalIgnoringCase;
 using ordable::sortNatural;
+using ordable::sortNaturalByKey;
 using ordable::sortNaturalIgnoringCase;
 
 // Ordable takes lists as shared vectors.
@@ -22,10 +23,10 @@ std::shared_ptr<std::vector<std::string>> list(std::initializer_list<std::string
   return std::make_shared<std::vector<std::string>>(values);
 }
 
-std::string join(std::vector<std::string> const &strings) {
+std::string join(std::vector<std::string> const &strings, std::string const &sep = " ") {
   std::string out;
   for (size_t i = 0; i < strings.size(); i++) {
-    out += (i ? " " : "") + strings[i];
+    out += (i ? sep : "") + strings[i];
   }
   return out;
 }
@@ -74,13 +75,23 @@ int main() {
 
   section("3. Sorting your own types");
 
-  // Sort with the language's own tools, using compareNatural to compare.
-  std::vector<Track> tracks = {{"Track 10: Outro", 95}, {"Track 1: Intro", 61}, {"Track 2: Rise", 184}};
-  std::stable_sort(tracks.begin(), tracks.end(),
-                   [](Track const &a, Track const &b) { return compareNatural(a.title, b.title) < 0; });
+  // sortNaturalByKey sorts any items by a string from each, made once each.
+  auto tracks = std::make_shared<std::vector<Track>>(
+      std::vector<Track>{{"Track 10: Outro", 95}, {"Track 1: Intro", 61}, {"Track 2: Rise", 184}});
+  auto byTitle = sortNaturalByKey<Track>(tracks, [](Track const &track) { return track.title; });
   std::cout << "tracks by title:\n";
-  for (auto const &track : tracks) {
+  for (auto const &track : *byTitle) {
     std::cout << "  " << track.title << " (" << track.seconds << " s)\n";
   }
+
+  // Or sort with the language's own tools, using compareNatural to compare.
+  std::vector<Track> own = *tracks;
+  std::stable_sort(own.begin(), own.end(),
+                   [](Track const &a, Track const &b) { return compareNatural(a.title, b.title) < 0; });
+  std::vector<std::string> titles;
+  for (auto const &track : own) {
+    titles.push_back(track.title);
+  }
+  std::cout << "with the language's own sort: " << join(titles, ", ") << "\n";
   return 0;
 }

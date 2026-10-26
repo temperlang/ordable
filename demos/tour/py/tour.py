@@ -11,6 +11,7 @@ from ordable import (
     compare_natural,
     compare_natural_ignoring_case,
     sort_natural,
+    sort_natural_by_key,
     sort_natural_ignoring_case,
 )
 
@@ -59,10 +60,14 @@ class Track:
     seconds: int
 
 
-# Sort with the language's own tools, using compare_natural to compare. Python
-# sorts by key, so cmp_to_key adapts the comparison.
+# sort_natural_by_key sorts any items by a string from each, made once each.
 tracks = [Track("Track 10: Outro", 95), Track("Track 1: Intro", 61), Track("Track 2: Rise", 184)]
-by_title = sorted(tracks, key=cmp_to_key(lambda a, b: compare_natural(a.title, b.title)))
+by_title = sort_natural_by_key(tracks, lambda track: track.title)
 print("tracks by title:")
 for track in by_title:
     print(f"  {track.title} ({track.seconds} s)")
+
+# Or sort with the language's own tools, using compare_natural to compare.
+# Python sorts by key, so cmp_to_key adapts the comparison.
+own = sorted(tracks, key=cmp_to_key(lambda a, b: compare_natural(a.title, b.title)))
+print(f"with the language's own sort: {', '.join(track.title for track in own)}")

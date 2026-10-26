@@ -4,8 +4,9 @@
 -- the same text. See ../README.md for how to run them.
 
 local ordable = require("ordable")
-local compareNatural, compareNaturalIgnoringCase, sortNatural, sortNaturalIgnoringCase =
-  ordable.compareNatural, ordable.compareNaturalIgnoringCase, ordable.sortNatural, ordable.sortNaturalIgnoringCase
+local compareNatural, compareNaturalIgnoringCase = ordable.compareNatural, ordable.compareNaturalIgnoringCase
+local sortNatural, sortNaturalIgnoringCase = ordable.sortNatural, ordable.sortNaturalIgnoringCase
+local sortNaturalByKey = ordable.sortNaturalByKey
 
 local function order(n)
   if n < 0 then return "before" elseif n > 0 then return "after" else return "same" end
@@ -46,15 +47,22 @@ print("leading zeros: " .. table.concat(sortNatural({ "2", "001", "1", "01" }), 
 
 section("3. Sorting your own types")
 
--- Sort with the language's own tools, using compareNatural to compare.
--- table.sort isn't stable, which doesn't matter for distinct titles.
+-- sortNaturalByKey sorts any items by a string from each, made once each.
 local tracks = {
   { title = "Track 10: Outro", seconds = 95 },
   { title = "Track 1: Intro", seconds = 61 },
   { title = "Track 2: Rise", seconds = 184 },
 }
-table.sort(tracks, function(a, b) return compareNatural(a.title, b.title) < 0 end)
+local byTitle = sortNaturalByKey(tracks, function(track) return track.title end)
 print("tracks by title:")
-for _, track in ipairs(tracks) do
+for _, track in ipairs(byTitle) do
   print("  " .. track.title .. " (" .. track.seconds .. " s)")
 end
+
+-- Or sort with the language's own tools, using compareNatural to compare.
+-- table.sort isn't stable, which doesn't matter for distinct titles.
+local own = { table.unpack(tracks) }
+table.sort(own, function(a, b) return compareNatural(a.title, b.title) < 0 end)
+local titles = {}
+for _, track in ipairs(own) do titles[#titles + 1] = track.title end
+print("with the language's own sort: " .. table.concat(titles, ", "))

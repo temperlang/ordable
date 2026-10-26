@@ -13,6 +13,9 @@ sortNatural(names); // img1.png img2.png img10.png img12.png
 
 compareNatural("file2", "file10"); // Negative: file2 comes first
 compareNaturalIgnoringCase("a", "B"); // Negative: a comes first
+
+// Any items, by a string from each, such as files by name.
+sortNaturalByKey(files) { file => file.name };
 ```
 
 Also: a [tour](demos/README.md) of the whole API in each language, with

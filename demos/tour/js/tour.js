@@ -7,6 +7,7 @@ import {
   compareNatural,
   compareNaturalIgnoringCase,
   sortNatural,
+  sortNaturalByKey,
   sortNaturalIgnoringCase,
 } from "ordable";
 
@@ -47,14 +48,18 @@ console.log(`leading zeros: ${sortNatural(["2", "001", "1", "01"]).join(" ")}`);
 
 section("3. Sorting your own types");
 
-// Sort with the language's own tools, using compareNatural to compare.
+// sortNaturalByKey sorts any items by a string from each, made once each.
 const tracks = [
   { title: "Track 10: Outro", seconds: 95 },
   { title: "Track 1: Intro", seconds: 61 },
   { title: "Track 2: Rise", seconds: 184 },
 ];
-const byTitle = tracks.toSorted((a, b) => compareNatural(a.title, b.title));
+const byTitle = sortNaturalByKey(tracks, (track) => track.title);
 console.log("tracks by title:");
 for (const track of byTitle) {
   console.log(`  ${track.title} (${track.seconds} s)`);
 }
+
+// Or sort with the language's own tools, using compareNatural to compare.
+const own = tracks.toSorted((a, b) => compareNatural(a.title, b.title));
+console.log(`with the language's own sort: ${own.map((track) => track.title).join(", ")}`);

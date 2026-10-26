@@ -3,7 +3,9 @@
 //! The same tour exists for each language Ordable supports, and they all
 //! print the same text. See ../README.md for how to run them.
 
-use ordable::{compare_natural, compare_natural_ignoring_case, sort_natural, sort_natural_ignoring_case};
+use ordable::{
+    compare_natural, compare_natural_ignoring_case, sort_natural, sort_natural_by_key, sort_natural_ignoring_case,
+};
 use std::sync::Arc;
 
 /// Ordable takes lists of shared strings.
@@ -24,6 +26,7 @@ fn section(title: &str) {
     println!("## {title}");
 }
 
+#[derive(Clone)]
 struct Track {
     title: String,
     seconds: i32,
@@ -60,16 +63,23 @@ fn main() {
 
     section("3. Sorting your own types");
 
-    // Sort with the language's own tools, using compare_natural to compare.
-    // It returns an i32, so compare that with 0 for an Ordering.
-    let mut tracks = vec![
+    // sort_natural_by_key sorts any items by a string from each, made once
+    // each.
+    let tracks = vec![
         Track { title: "Track 10: Outro".into(), seconds: 95 },
         Track { title: "Track 1: Intro".into(), seconds: 61 },
         Track { title: "Track 2: Rise".into(), seconds: 184 },
     ];
-    tracks.sort_by(|a, b| compare_natural(a.title.as_str(), b.title.as_str()).cmp(&0));
+    let by_title = sort_natural_by_key(tracks.clone(), Arc::new(|track: Track| Arc::new(track.title)));
     println!("tracks by title:");
-    for track in &tracks {
+    for track in by_title.iter() {
         println!("  {} ({} s)", track.title, track.seconds);
     }
+
+    // Or sort with the language's own tools, using compare_natural to
+    // compare. It returns an i32, so compare that with 0 for an Ordering.
+    let mut own = tracks;
+    own.sort_by(|a, b| compare_natural(a.title.as_str(), b.title.as_str()).cmp(&0));
+    let titles: Vec<&str> = own.iter().map(|track| track.title.as_str()).collect();
+    println!("with the language's own sort: {}", titles.join(", "));
 }
