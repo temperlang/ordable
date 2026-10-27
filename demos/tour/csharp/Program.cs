@@ -53,11 +53,16 @@ Console.WriteLine($"key for file10: {string.Join(" ", NaturalKey("file10").Selec
 Section("3. Options");
 
 // An Order has the same functions as methods, with options as named
-// arguments: here uppercase first, then case-sensitive.
+// arguments: here uppercase first, then grouped by case.
 var upperFirst = new Order(upperFirst: true);  // snippet: options
 Console.WriteLine($"uppercase first: {string.Join(" ", upperFirst.Sort(files))}");  // snippet: options
-var caseSensitive = new Order(caseSensitive: true);  // snippet: options
-Console.WriteLine($"case-sensitive: {string.Join(" ", caseSensitive.Sort(files))}");  // snippet: options
+var grouped = new Order(groupByCase: true);  // snippet: options
+Console.WriteLine($"grouped by case: {string.Join(" ", grouped.Sort(files))}");  // snippet: options
+// Or let different strings be equal, here ignoring accents and case,
+// with equal keys too.
+var loose = new Order(ignoreAccents: true, ignoreCase: true);  // snippet: equal
+Console.WriteLine($"ignoring accents and case, Café vs CAFE: {Relation(loose.Compare("Café", "CAFE"))}");  // snippet: equal
+Console.WriteLine($"same key: {(loose.Key("Café") == loose.Key("CAFE") ? "yes" : "no")}");  // snippet: equal
 
 Section("4. Sorting your own types");
 

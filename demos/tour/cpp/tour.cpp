@@ -83,11 +83,16 @@ int main() {
   section("3. Options");
 
   // An Order has the same functions as methods, with options: here
-  // uppercase first, then case-sensitive.
+  // uppercase first, then grouped by case.
   auto upperFirst = Order::make(true);  // snippet: options
   std::cout << "uppercase first: " << join(*upperFirst->sort(files)) << "\n";  // snippet: options
-  auto caseSensitive = Order::make(false, true);  // snippet: options
-  std::cout << "case-sensitive: " << join(*caseSensitive->sort(files)) << "\n";  // snippet: options
+  auto grouped = Order::make(false, true);  // snippet: options
+  std::cout << "grouped by case: " << join(*grouped->sort(files)) << "\n";  // snippet: options
+  // Or let different strings be equal, here ignoring accents and case,
+  // with equal keys too.
+  auto loose = Order::make(false, false, true, true);  // snippet: equal
+  std::cout << "ignoring accents and case, Café vs CAFE: " << order(loose->compare("Café", "CAFE")) << "\n";  // snippet: equal
+  std::cout << "same key: " << (loose->key("Café") == loose->key("CAFE") ? "yes" : "no") << "\n";  // snippet: equal
 
   section("4. Sorting your own types");
 

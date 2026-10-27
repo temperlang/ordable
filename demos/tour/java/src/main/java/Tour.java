@@ -66,11 +66,16 @@ public class Tour {
         section("3. Options");
 
         // An Order has the same functions as methods, with options, set
-        // through its builder: here uppercase first, then case-sensitive.
+        // through its builder: here uppercase first, then grouped by case.
         Order upperFirst = new Order.Builder().upperFirst(true).build();  // snippet: options
         System.out.println("uppercase first: " + String.join(" ", upperFirst.sort(files)));  // snippet: options
-        Order caseSensitive = new Order.Builder().caseSensitive(true).build();  // snippet: options
-        System.out.println("case-sensitive: " + String.join(" ", caseSensitive.sort(files)));  // snippet: options
+        Order grouped = new Order.Builder().groupByCase(true).build();  // snippet: options
+        System.out.println("grouped by case: " + String.join(" ", grouped.sort(files)));  // snippet: options
+        // Or let different strings be equal, here ignoring accents and
+        // case, with equal keys too.
+        Order loose = new Order.Builder().ignoreAccents(true).ignoreCase(true).build();  // snippet: equal
+        System.out.println("ignoring accents and case, Café vs CAFE: " + order(loose.compare("Café", "CAFE")));  // snippet: equal
+        System.out.println("same key: " + (loose.key("Café").equals(loose.key("CAFE")) ? "yes" : "no"));  // snippet: equal
 
         section("4. Sorting your own types");
 

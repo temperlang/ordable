@@ -55,11 +55,16 @@ print("key for file10: " .. table.concat(hex, " "))  -- snippet: keys
 section("3. Options")
 
 -- An Order has the same functions as methods, with options: here
--- uppercase first, then case-sensitive.
+-- uppercase first, then grouped by case.
 local upperFirst = Order(true)  -- snippet: options
 print("uppercase first: " .. table.concat(upperFirst:sort(files), " "))  -- snippet: options
-local caseSensitive = Order(false, true)  -- snippet: options
-print("case-sensitive: " .. table.concat(caseSensitive:sort(files), " "))  -- snippet: options
+local grouped = Order(false, true)  -- snippet: options
+print("grouped by case: " .. table.concat(grouped:sort(files), " "))  -- snippet: options
+-- Or let different strings be equal, here ignoring accents and case,
+-- with equal keys too.
+local loose = Order(false, false, true, true)  -- snippet: equal
+print("ignoring accents and case, Café vs CAFE: " .. order(loose:compare("Café", "CAFE")))  -- snippet: equal
+print("same key: " .. (loose:key("Café") == loose:key("CAFE") and "yes" or "no"))  -- snippet: equal
 
 section("4. Sorting your own types")
 

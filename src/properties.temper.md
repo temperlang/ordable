@@ -98,7 +98,8 @@ and sorting gives one answer up to equal strings.
 
     test("total order with each option") { test =>
       checkOrder(test, true) { a, b => upperOrder.compare(a, b) };
-      checkOrder(test, true) { a, b => sensitiveOrder.compare(a, b) };
+      checkOrder(test, true) { a, b => groupOrder.compare(a, b) };
+      checkOrder(test, true) { a, b => groupUpperOrder.compare(a, b) };
     }
 
     test("order with each ignoring option") { test =>

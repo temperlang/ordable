@@ -23,8 +23,8 @@ sortNaturalByKey(files) { file => file.name };
 naturalKey("file10"); // Sorts after naturalKey("file2")
 
 // Options: an Order has the same functions as methods.
-let sensitive: Order = { caseSensitive: true };
-sensitive.sort(names); // Every IMG before every img, as plain sorting does
+let grouped: Order = { groupByCase: true, upperFirst: true };
+grouped.sort(names); // Every IMG before every img, as plain sorting does
 ```
 
 Also: a [tour](demos/README.md) of the whole API in each language, with
@@ -44,11 +44,12 @@ browser, beside plain sorting and `Intl.Collator`.
   digits' script (`1` before `١`), accents (`e` before `é`), case
   (`a` before `A`), and odd forms (`K` before the Kelvin sign) only break
   ties, in that order.
-- Options, in an `Order`: `upperFirst` (`A` before `a` in ties),
-  `caseSensitive` (case counts as much as the letter, so every `B` comes
-  before every `a`), and `ignoreAccents` and `ignoreCase`, which let
-  different strings compare equal (`é` equal to `e`, `A` to `a`), with
-  the same keys.
+- Options, in an `Order`: how much case counts, from `ignoreCase`
+  (`File` equals `file`), through the default (case only breaks ties),
+  to `groupByCase` (case before the letter, so every `img` comes before
+  every `IMG`); `upperFirst`, for uppercase first wherever case counts;
+  and `ignoreAccents` (`é` equals `e`). With either `ignore` option,
+  different strings can compare equal, with the same keys.
 - No locale rules: that's for ICU or the platform.
 
 Ordable's Unicode tables (decimal digits, case folding as 202 compact
@@ -73,7 +74,7 @@ so a release that changes keys (a new Unicode version, say) will say so.
   matches `ss`.
 - **Done:** defaults as people expect, with case only breaking ties
   (lowercase first), and an `Order` class for options (`upperFirst`,
-  `caseSensitive`).
+  `groupByCase`).
 - **Done:** options that let different strings compare equal
   (`ignoreAccents` and `ignoreCase`), with matching keys.
 - **Next:** decomposed text (`e` plus a combining accent sorting as `é`);

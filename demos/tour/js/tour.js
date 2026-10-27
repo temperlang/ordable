@@ -44,11 +44,16 @@ console.log(`key for file10: ${hex.join(" ")}`);  // snippet: keys
 section("3. Options");
 
 // An Order has the same functions as methods, with options named in an
-// object: here uppercase first, then case-sensitive.
+// object: here uppercase first, then grouped by case.
 const upperFirst = Order.new({ upperFirst: true });  // snippet: options
 console.log(`uppercase first: ${upperFirst.sort(files).join(" ")}`);  // snippet: options
-const caseSensitive = Order.new({ caseSensitive: true });  // snippet: options
-console.log(`case-sensitive: ${caseSensitive.sort(files).join(" ")}`);  // snippet: options
+const grouped = Order.new({ groupByCase: true });  // snippet: options
+console.log(`grouped by case: ${grouped.sort(files).join(" ")}`);  // snippet: options
+// Or let different strings be equal, here ignoring accents and case,
+// with equal keys too.
+const loose = Order.new({ ignoreAccents: true, ignoreCase: true });  // snippet: equal
+console.log(`ignoring accents and case, Café vs CAFE: ${order(loose.compare("Café", "CAFE"))}`);  // snippet: equal
+console.log(`same key: ${loose.key("Café") === loose.key("CAFE") ? "yes" : "no"}`);  // snippet: equal
 
 section("4. Sorting your own types");
 

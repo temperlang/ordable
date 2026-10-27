@@ -71,11 +71,16 @@ fn main() {
     section("3. Options");
 
     // An Order has the same functions as methods, with options set through
-    // its builder: here uppercase first, then case-sensitive.
+    // its builder: here uppercase first, then grouped by case.
     let upper_first = OrderBuilder {}.options().upper_first(true).build();  // snippet: options
     println!("uppercase first: {}", join(&upper_first.sort(files.clone())));  // snippet: options
-    let case_sensitive = OrderBuilder {}.options().case_sensitive(true).build();  // snippet: options
-    println!("case-sensitive: {}", join(&case_sensitive.sort(files)));  // snippet: options
+    let grouped = OrderBuilder {}.options().group_by_case(true).build();  // snippet: options
+    println!("grouped by case: {}", join(&grouped.sort(files)));  // snippet: options
+    // Or let different strings be equal, here ignoring accents and case,
+    // with equal keys too.
+    let loose = OrderBuilder {}.options().ignore_accents(true).ignore_case(true).build();  // snippet: equal
+    println!("ignoring accents and case, Café vs CAFE: {}", order(loose.compare("Café", "CAFE")));  // snippet: equal
+    println!("same key: {}", if loose.key("Café") == loose.key("CAFE") { "yes" } else { "no" });  // snippet: equal
 
     section("4. Sorting your own types");
 
