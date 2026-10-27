@@ -10,8 +10,8 @@ with `ORDER BY`.
 
 Key code points are all below U+D800, where comparing UTF-16 code units
 (JavaScript, Java, C#), UTF-8 bytes (Rust, C++), and code points (Python)
-all agree, and none is U+0000. A key is no shorter than its string and,
-with digits, a little longer.
+all agree, and none is U+0000. A key is several times as long as its
+string: by default, a string of n letters gives 4n + 6 code points.
 
 Keys are the same in every language, so they can be stored and shared,
 which makes their layout part of Ordable's API: once keys are stored,

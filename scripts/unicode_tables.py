@@ -1,17 +1,21 @@
 # /// script
-# requires-python = ">=3.11"
+# requires-python = "==3.12.*"  # Python 3.12 has Unicode 15.0.0 (3.13 has 15.1)
 # ///
 """Writes src/unicode-tables.temper.md from Python's Unicode data.
 
     uv run scripts/unicode_tables.py
 
-The Unicode version is Python's (`unicodedata.unidata_version`), so run it
-with a newer Python to update.
+The data is Python's (`unicodedata`), which must be Unicode
+`UNICODE_VERSION`, so tables don't change by accident with the Python
+version. Stored natural keys depend on these tables, so moving to a new
+Unicode version (raise `UNICODE_VERSION`, then run with a Python that
+has it) can change some keys, and a release that does says so.
 """
 
 import unicodedata
 from pathlib import Path
 
+UNICODE_VERSION = "15.0.0"
 OUT = Path(__file__).parent.parent / "src" / "unicode-tables.temper.md"
 
 
@@ -196,6 +200,11 @@ def check_lookups(zeros, runs, bases, fulls) -> None:
 
 
 def main() -> None:
+    if unicodedata.unidata_version != UNICODE_VERSION:
+        raise SystemExit(
+            f"Python has Unicode {unicodedata.unidata_version}, not {UNICODE_VERSION};"
+            " run with a Python that has it, or raise UNICODE_VERSION on purpose"
+        )
     zeros = digit_zeros()
     runs = fold_runs()
     bases = base_pairs()
