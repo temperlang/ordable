@@ -357,3 +357,15 @@ three, with 0 for none. Others fold as `foldCase` does.
       ]);
       runs.toList()
     }
+
+Odd cases: the 30 code points that fold to the same letter as
+another of the same case but aren't the usual one, as the Kelvin sign `K`
+beside `K`, or `ς` beside `Σ`. They're only told apart at the last
+level of comparison. All are from U+00B5 up.
+
+    let oddCases: List<Int> = [
+      0xB5, 0x17F, 0x1C5, 0x1C8, 0x1CB, 0x1F2, 0x345, 0x3C2,
+      0x3D0, 0x3D1, 0x3D5, 0x3D6, 0x3F0, 0x3F1, 0x3F4, 0x3F5,
+      0x1C80, 0x1C81, 0x1C82, 0x1C83, 0x1C84, 0x1C85, 0x1C86, 0x1C87,
+      0x1C88, 0x1E9B, 0x1FBE, 0x2126, 0x212A, 0x212B,
+    ];

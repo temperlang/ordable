@@ -117,6 +117,26 @@ def full_folds() -> list[tuple[int, list[int]]]:
     return folds
 
 
+def odd_cases() -> list[int]:
+    """Code points that fold to the same letter as another of the same case
+    and aren't the usual one, as the Kelvin sign `K` beside `K`: the usual
+    one is the folding's uppercase (or the lowest, if that isn't one)."""
+    groups: dict[int, list[int]] = {}
+    for c in range(0x110000):
+        if 0xD800 <= c <= 0xDFFF:
+            continue
+        fold = simple_fold(c)
+        if fold != c:
+            groups.setdefault(fold, []).append(c)
+    odd = []
+    for fold, chars in groups.items():
+        upper = chr(fold).upper()
+        usual = ord(upper) if len(upper) == 1 and ord(upper) in chars else min(chars)
+        odd += [c for c in chars if c != usual]
+    assert 0x212A in odd and 0x3C2 in odd and 0x4B not in odd and min(odd) == 0xB5
+    return sorted(odd)
+
+
 def rows(values: list[str], per_row: int) -> str:
     lines = [", ".join(values[i : i + per_row]) for i in range(0, len(values), per_row)]
     return ",\n".join(f"      {line}" for line in lines)
@@ -209,6 +229,7 @@ def main() -> None:
     runs = fold_runs()
     bases = base_pairs()
     fulls = full_folds()
+    odd = odd_cases()
     check_lookups(zeros, runs, bases, fulls)
     fold_values = [
         f"0x{start:X}, {count}, {stride}, {delta}" for start, count, stride, delta in runs
@@ -265,6 +286,15 @@ three, with 0 for none. Others fold as `foldCase` does.
 {chunks([", ".join(f"0x{n:X}" for n in [c] + u + [0] * (3 - len(u))) for c, u in fulls], 4)}
       runs.toList()
     }}
+
+Odd cases: the {len(odd)} code points that fold to the same letter as
+another of the same case but aren't the usual one, as the Kelvin sign `K`
+beside `K`, or `ς` beside `Σ`. They're only told apart at the last
+level of comparison. All are from U+00B5 up.
+
+    let oddCases: List<Int> = [
+{rows([f"0x{c:X}" for c in odd], 8)},
+    ];
 """)
 
 

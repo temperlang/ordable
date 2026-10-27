@@ -10,8 +10,9 @@ with `ORDER BY`.
 
 Key code points are all below U+D800, where comparing UTF-16 code units
 (JavaScript, Java, C#), UTF-8 bytes (Rust, C++), and code points (Python)
-all agree, and none is U+0000. A key is several times as long as its
-string: by default, a string of n letters gives 4n + 6 code points.
+all agree, and none is U+0000. A key is usually about as long as its
+string: one code point for the options, one per letter, and one more
+per number, plus a little for each uppercase or accented letter.
 
 Keys are the same in every language, so they can be stored and shared,
 which makes their layout part of Ordable's API: once keys are stored,
@@ -33,21 +34,31 @@ U+0001, which is below every other code point used:
    `s s`); for each run of digits, its value. A value is its count of
    significant digits, then those digits.
 2. **Leading zeros:** the count for each run of digits.
-3. **Scripts:** the zero of each run of digits, so `1` before `١`.
-4. **Accents:** each character other than a digit, case folded unless
-   case-sensitive.
+3. **Scripts:** for each run of digits, its zero's distance from ASCII
+   `0`, so `1` before `١`.
+4. **Accents:** for each character other than a digit, 0 if it has no
+   accent, else its case folding (unless case-sensitive).
 5. **Case,** unless case-sensitive: for each character other than a
    digit, 0 or 1, whichever case comes first being 0.
-6. **Code points,** unless case-sensitive: each character other than a
-   digit, as it is.
+6. **Code points,** unless case-sensitive: for each character other
+   than a digit, 0, or itself if it's an odd form like the Kelvin sign.
+
+So the levels after the first hold numbers where 0 is usual, and the
+comparison reads a string that runs out as 0s. Then each level leaves
+out its trailing 0s, and the key leaves out its trailing empty levels,
+separators and all, without changing the order. Most keys are just the
+options letter and the first level: `naturalKey("file10")` is `A f i l
+e 2 1 0` (shifted), where an uppercase letter adds the case level up to
+it, and an accent the accents level.
 
 Every code point is shifted up by 3, past the separator. Then digits
-and counts land on the shifted ASCII digits, which no other character
-can, so a number sorts against a character just as an ASCII digit
-would. A count uses a digit per 9 and then the rest, as `9 9 4` for 22,
-which keeps counts in order however long they get and tells where each
-ends. Code points from U+D7FC up, shifted past U+D7FF, become U+D7FF and
-then two digits in base 0x7F00, at U+0100 up.
+and counts in the first level land on the shifted ASCII digits, which no
+other character can, so a number sorts against a character just as an
+ASCII digit would. A count there uses a digit per 9 and then the rest,
+as `9 9 4` for 22, which keeps counts in order however long they get and
+tells where each ends. Code points from U+D7FC up, shifted past U+D7FF,
+become U+D7FF and then two digits in base 0x7F00, at U+0100 up, which
+keeps them in order too.
 
     let shift = 3;
     let separator = 1;
@@ -60,6 +71,12 @@ then two digits in base 0x7F00, at U+0100 up.
       let marks = new StringBuilder();
       let cases = new StringBuilder();
       let codes = new StringBuilder();
+      // Zero weights held back from each level until a nonzero one follows.
+      var zerosHeld = 0;
+      var scriptsHeld = 0;
+      var marksHeld = 0;
+      var casesHeld = 0;
+      var codesHeld = 0;
       var i = String.begin;
       var rest = -1;
       while (rest >= 0 || s.hasIndex(i)) {
@@ -76,8 +93,8 @@ then two digits in base 0x7F00, at U+0100 up.
             count += 1;
             at = s.next(at);
           }
-          appendCount(zeros, count);
-          appendCodePoint(scripts, zero);
+          zerosHeld = addWeight(zeros, zerosHeld, count);
+          scriptsHeld = addWeight(scripts, scriptsHeld, zero - char'0');
           appendCount(main, s.countBetween(at, digitsEnd(s, at, zero)));
           while (s.hasIndex(at) && isDigitOf(s[at], zero)) {
             appendCodePoint(main, char'0' + (s[at] - zero));
@@ -87,24 +104,57 @@ then two digits in base 0x7F00, at U+0100 up.
         } else {
           let c = s[i];
           i = s.next(i);
-          appendCodePoint(marks, markKey(c, order));
-          if (fold) {
-            appendCodePoint(cases, caseKey(c, order));
-            appendCodePoint(codes, c);
-          }
-          appendCodePoint(main, firstUnit(c, fold));
+          let unit = firstUnit(c, fold);
           rest = foldRest(c, fold);
+          appendCodePoint(main, unit);
+          if (c < 0x80) {
+            // ASCII has no accents or odd forms, so only case can say anything.
+            marksHeld += 1;
+            codesHeld += 1;
+          } else {
+            marksHeld = addWeight(marks, marksHeld, plainOr(if (fold) { foldCase(c) } else { c }, unit, rest));
+            codesHeld = addWeight(codes, codesHeld, codeWeight(c));
+          }
+          if (fold) {
+            let caseOf = caseWeight(c, order);
+            if (caseOf == 0) {
+              casesHeld += 1;
+            } else {
+              casesHeld = addWeight(cases, casesHeld, caseOf);
+            }
+          }
         }
       }
       let key = new StringBuilder();
       key.appendCodePoint(optionsLetter(order)) orelse panic();
       key.append(main.toString());
-      let sections = if (fold) { [zeros, scripts, marks, cases, codes] } else { [zeros, scripts, marks] };
-      for (let section of sections) {
+      let levels: List<StringBuilder> = if (fold) { [zeros, scripts, marks, cases, codes] } else { [zeros, scripts, marks] };
+      let sections: List<String> = levels.map { level => level.toString() };
+      // Empty sections at the end are left out, separators and all.
+      var last = sections.length - 1;
+      while (last >= 0 && sections[last].isEmpty) {
+        last -= 1;
+      }
+      for (var k = 0; k <= last; k += 1) {
         key.appendCodePoint(separator) orelse panic();
-        key.append(section.toString());
+        key.append(sections[k]);
       }
       key.toString()
+    }
+
+Adds `weight` to a level, but holds back 0s until a nonzero weight
+follows them, so a level ends at its last nonzero weight. Returns how
+many 0s are held now.
+
+    let addWeight(level: StringBuilder, held: Int, weight: Int): Int {
+      if (weight == 0) {
+        return held + 1;
+      }
+      for (var k = 0; k < held; k += 1) {
+        appendCodePoint(level, 0);
+      }
+      appendCodePoint(level, weight);
+      0
     }
 
     let optionsLetter(order: Order): Int {
@@ -193,28 +243,29 @@ Code points are in hexadecimal.
     }
 
     test("exact keys") {
-      // The options letter, then six empty levels.
-      assert(keyCodes(naturalKey("")) == "41 1 1 1 1 1");
-      // Letters and numbers, zeros, scripts, accents, case (all lowercase,
-      // so 0, shifted to 3), and code points.
-      assert(keyCodes(naturalKey("file10")) == "41 69 6c 6f 68 35 34 33 1 33 1 33 1 69 6c 6f 68 1 3 3 3 3 1 69 6c 6f 68");
+      // Just the options letter.
+      assert(keyCodes(naturalKey("")) == "41");
+      // Letters and a number (shifted by 3), and nothing else to say.
+      assert(keyCodes(naturalKey("file10")) == "41 69 6c 6f 68 35 34 33");
       // A run's leading zeros go after the first separator.
-      assert(keyCodes(naturalKey("a007")) == "41 64 34 3a 1 35 1 33 1 64 1 3 1 64");
-      // Digits in another script, whose zero goes after the second separator.
-      assert(keyCodes(naturalKey("x\u{662}\u{661}")) == "41 7b 35 35 34 1 33 1 663 1 7b 1 3 1 7b");
+      assert(keyCodes(naturalKey("a007")) == "41 64 34 3a 1 5");
+      // Digits in another script, whose zero (from ASCII 0) goes after the second.
+      assert(keyCodes(naturalKey("x\u{662}\u{661}")) == "41 7b 35 35 34 1 1 633");
       // A count of 10 digits is 9 then 1.
-      assert(keyCodes(naturalKey("1234567890")) == "41 3c 34 34 35 36 37 38 39 3a 3b 3c 33 1 33 1 33 1 1 1");
+      assert(keyCodes(naturalKey("1234567890")) == "41 3c 34 34 35 36 37 38 39 3a 3b 3c 33");
       // é is e in the first level, and itself in the accents level.
-      assert(keyCodes(naturalKey("\u{E9}")) == "41 68 1 1 1 ec 1 3 1 ec");
+      assert(keyCodes(naturalKey("\u{E9}")) == "41 68 1 1 1 ec");
       // Folded fully first (ß to s s), case folded for accents.
-      assert(keyCodes(naturalKey("\u{DF}")) == "41 76 76 1 1 1 e2 1 3 1 e2");
+      assert(keyCodes(naturalKey("\u{DF}")) == "41 76 76 1 1 1 e2");
       // A is uppercase, 1 in the case level by default, 0 with upperFirst.
-      assert(keyCodes(naturalKey("Ab")) == "41 64 65 1 1 1 64 65 1 4 3 1 44 65");
-      assert(keyCodes(upperOrder.key("Ab")) == "42 64 65 1 1 1 64 65 1 3 4 1 44 65");
+      assert(keyCodes(naturalKey("Ab")) == "41 64 65 1 1 1 1 4");
+      assert(keyCodes(upperOrder.key("Ab")) == "42 64 65 1 1 1 1 3 4");
       // Case-sensitive: nothing folded, and no case or code point levels.
-      assert(keyCodes(sensitiveOrder.key("Ab")) == "43 44 65 1 1 1 44 65");
+      assert(keyCodes(sensitiveOrder.key("Ab")) == "43 44 65");
+      // The Kelvin sign is k, uppercase, and an odd form.
+      assert(keyCodes(naturalKey("\u{212A}")) == "41 6e 1 1 1 1 4 1 212d");
       // Past U+D7FB: U+D7FF, then two digits in base 0x7F00 from U+0100.
-      assert(keyCodes(naturalKey("\u{1F600}")) == "41 d7ff 102 2104 1 1 1 d7ff 102 2104 1 3 1 d7ff 102 2104");
+      assert(keyCodes(naturalKey("\u{1F600}")) == "41 d7ff 102 2104");
     }
 
     test("keys stay below surrogates and above U+0000") {

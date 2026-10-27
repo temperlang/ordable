@@ -27,14 +27,16 @@ every run, and its numbers stay small enough to never overflow.
     }
 
 ASCII digits and zeros, Arabic-Indic and fullwidth digits, letters in
-both cases (including `ß`, `ẞ`, Greek sigmas, and Cyrillic), and a space,
-a dot, and a dash.
+both cases (including `ß`, `ẞ`, Greek sigmas, `α` and `ά`, and
+Cyrillic), odd forms (the Kelvin sign and `µ`, beside `K` and `Μ`), and a
+space, a dot, and a dash.
 
     let alphabet: List<Int> = [
       char'0', char'0', char'1', char'2', char'9',
       0x660, 0x661, 0x662, 0xFF10, 0xFF12,
       char'a', char'A', char'b', char'B', char'z',
-      0xE9, 0xC9, 0xDF, 0x1E9E, 0x3A3, 0x3C3, 0x3C2, 0x416, 0x436,
+      0xE9, 0xC9, 0xDF, 0x1E9E, 0x3A3, 0x3C3, 0x3C2, 0x3B1, 0x3AC, 0x416, 0x436,
+      char'K', 0x212A, 0x39C, 0xB5,
       char' ', char'.', char'-',
     ];
 

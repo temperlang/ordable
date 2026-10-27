@@ -2,8 +2,8 @@
 
 Character facts that natural order needs, from generated tables
 ([unicode-tables](unicode-tables.temper.md)). They're kept apart from the
-rest so they could move to a shared Unicode library or Temper's core
-later, and they stay internal until that's decided.
+rest, and internal, so they can move to Unicode support built into
+Temper later without changing Ordable's API.
 
 ## Decimal Digits
 
@@ -106,6 +106,15 @@ Full case folding, which can give more than one code point, as `ss` for
       units.add(foldCase(c));
     }
 
+## Odd Cases
+
+Whether `c` folds to the same letter as another character of the same
+case but isn't the usual one, as the Kelvin sign `K` beside `K`.
+
+    let isOddCase(c: Int): Boolean {
+      c >= 0xB5 && findEntry(oddCases, 1, c) >= 0
+    }
+
 The start of the entry for `c` in a sorted table of `width` numbers per
 entry, the first being its key, or -1 if there's none.
 
@@ -188,4 +197,13 @@ entry, the first being its key, or -1 if there's none.
       addFullFold(units, char'A');
       addFullFold(units, 0xFB01); // ﬁ
       assert(units.toList().join(" ") { u => u.toString(16) } == "73 73 73 73 61 66 69");
+    }
+
+    test("odd cases") {
+      assert(isOddCase(0x212A)); // Kelvin sign
+      assert(isOddCase(0x3C2)); // ς
+      assert(isOddCase(0xB5)); // µ, beside Μ
+      assert(!isOddCase(char'K'));
+      assert(!isOddCase(0x3A3)); // Σ
+      assert(!isOddCase(0x39C)); // Μ
     }
