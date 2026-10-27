@@ -43,13 +43,19 @@ const SPOTS = [
   {
     id: "options",
     title: "Options",
-    about: "By default, case only breaks ties, lowercase first. An `Order` with options changes that: `upperFirst`, or `caseSensitive`, where every B comes before every a, as in plain sorting.",
-    target: () => find("#case-sensitive"),
+    about: "By default, case is considered last, only to break ties, lowercase first. An `Order` with options changes that: `casing: Casing.ignored`, so case never counts; `casing: Casing.first`, so case counts before the letter, as in plain sorting; and `upperFirst`, for uppercase first wherever case counts.",
+    target: () => find("#case-levels"),
+  },
+  {
+    id: "equal",
+    title: "Equal strings",
+    about: "`ignoreAccents` and `Casing.ignored` let different strings be equal, so Café equals CAFE, with equal keys, for matching or a unique index in a database. Equal strings keep their input order when sorting.",
+    target: () => find("#switch-ignoreAccents"),
   },
   {
     id: "ties",
     title: "One answer, whatever the input order",
-    about: "`compareNatural` gives 0 only for the same string, so a list always sorts the same way, whatever its order, as shuffling shows. Leading zeros, digit scripts, accents, and case only break ties, so 1 comes before 01.",
+    about: "By default, `compareNatural` gives 0 only for the same string, so a list always sorts the same way, whatever its order, as shuffling shows. Leading zeros, digit scripts, accents, and case only break ties, so 1 comes before 01.",
     // Ordable's "No ties, ever", the claim the shuffle tests.
     target: () => find("#ordable-stat"),
   },

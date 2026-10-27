@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from functools import cmp_to_key
 
 from ordable import (
+    Casing,
     Order,
     compare_natural,
     natural_key,
@@ -58,8 +59,13 @@ section("3. Options")
 # An Order has the same functions as methods, with options.
 upper_first = Order(upper_first=True)  # snippet: options
 print(f"uppercase first: {' '.join(upper_first.sort(files))}")  # snippet: options
-case_sensitive = Order(case_sensitive=True)  # snippet: options
-print(f"case-sensitive: {' '.join(case_sensitive.sort(files))}")  # snippet: options
+case_first = Order(casing=Casing.first)  # snippet: options
+print(f"case first: {' '.join(case_first.sort(files))}")  # snippet: options
+# Or let different strings be equal, here ignoring accents and case,
+# with equal keys too.
+loose = Order(casing=Casing.ignored, ignore_accents=True)  # snippet: equal
+print(f"ignoring accents and case, Café vs CAFE: {order(loose.compare('Café', 'CAFE'))}")  # snippet: equal
+print(f"same key: {'yes' if loose.key('Café') == loose.key('CAFE') else 'no'}")  # snippet: equal
 
 section("4. Sorting your own types")
 

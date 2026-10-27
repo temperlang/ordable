@@ -34,8 +34,8 @@ Since this comparison, Ordable also sorts accented letters with their
 base letter (`e`, then `é`, then `f`), as `Intl.Collator`,
 `natural-orderby`, and `natsort` (ignoring case) do, and matches `ß` with
 `ss`, as `Intl.Collator` and `natsort` do. Case now only breaks ties by
-default, lowercase first, as in `Intl.Collator`; case-sensitive order is
-an option.
+default, lowercase first, as in `Intl.Collator`; putting case first, as
+plain sorting does, is an option.
 
 ## Where others do things Ordable doesn't (yet)
 

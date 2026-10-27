@@ -269,6 +269,61 @@ ol.rows b {
   margin: 1rem 0 0.5rem;
 }
 
+.options {
+  display: contents;
+}
+
+.options-label {
+  margin-left: 0.5rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.switches {
+  display: contents;
+}
+
+.segmented {
+  display: inline-flex;
+}
+
+.segmented button {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0.2rem 0.7rem;
+  margin-left: -1px;
+  cursor: pointer;
+}
+
+.segmented button:first-child {
+  margin-left: 0;
+  border-radius: 999px 0 0 999px;
+}
+
+.segmented button:last-child {
+  border-radius: 0 999px 999px 0;
+}
+
+.segmented button:hover {
+  position: relative;
+  border-color: var(--accent);
+}
+
+.segmented button[aria-pressed="true"] {
+  position: relative;
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.switch:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .switch {
   display: inline-flex;
   align-items: center;
@@ -946,8 +1001,8 @@ footer {
   position: absolute;
   top: 0;
   left: 0;
-  /* Above an open card, so the badges it would cover stay reachable. */
-  z-index: 26;
+  /* Below an open card, so no badge shows inside it. */
+  z-index: 24;
 }
 
 .dev-badge {

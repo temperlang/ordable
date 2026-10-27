@@ -1,7 +1,9 @@
 # Ordable
 
 Sorts strings in natural order, the way people expect: `file2` before
-`file10`, since runs of digits compare as numbers.
+`file10`, since runs of digits compare as numbers. (Not what Java and
+Kotlin call natural order, `naturalOrder()`, which for strings is plain
+code-unit order.)
 
 ## Examples
 
@@ -21,8 +23,8 @@ sortNaturalByKey(files) { file => file.name };
 naturalKey("file10"); // Sorts after naturalKey("file2")
 
 // Options: an Order has the same functions as methods.
-let sensitive: Order = { caseSensitive: true };
-sensitive.sort(names); // Every IMG before every img, as plain sorting does
+let caseFirst: Order = { casing: Casing.first, upperFirst: true };
+caseFirst.sort(names); // Every IMG before every img, as plain sorting does
 ```
 
 Also: a [tour](demos/README.md) of the whole API in each language, with
@@ -42,9 +44,13 @@ browser, beside plain sorting and `Intl.Collator`.
   digits' script (`1` before `١`), accents (`e` before `é`), case
   (`a` before `A`), and odd forms (`K` before the Kelvin sign) only break
   ties, in that order.
-- Options, in an `Order`: `upperFirst` (`A` before `a` in ties) and
-  `caseSensitive` (case counts as much as the letter, so every `B` comes
-  before every `a`).
+- Options, in an `Order`: when case is considered, its `casing`, from
+  `Casing.ignored` (`File` equals `file`), through `Casing.last` (the
+  default: case only breaks ties), to `Casing.first` (case before the
+  letter, so every `img` comes before every `IMG`); `upperFirst`,
+  for uppercase first wherever case counts; and `ignoreAccents` (`é`
+  equals `e`). With ignored case or accents, different strings can
+  compare equal, with the same keys.
 - No locale rules: that's for ICU or the platform.
 
 Ordable's Unicode tables (decimal digits, case folding as 202 compact
@@ -68,13 +74,16 @@ so a release that changes keys (a new Unicode version, say) will say so.
 - **Done:** accents sort with their base letter (`e`, `é`, `f`), and `ß`
   matches `ss`.
 - **Done:** defaults as people expect, with case only breaking ties
-  (lowercase first), and an `Order` class for options (`upperFirst`,
-  `caseSensitive`).
+  (lowercase first), and an `Order` class for options (`casing` and
+  `upperFirst`).
+- **Done:** options that let different strings compare equal
+  (`ignoreAccents` and `Casing.ignored`), with matching keys.
 - **Next:** decomposed text (`e` plus a combining accent sorting as `é`);
   smarter punctuation, checked against real-world samples; and more
-  options: signed and decimal numbers, a strength for equality across
-  equivalents, and a generic `sortByKey` method on `Order` once Temper's
-  C++ backend allows it.
+  options: signed and decimal numbers; an option to make equivalent
+  numbers equal (ignoring leading zeros and digit scripts, so `01`,
+  `1`, and `١` tie), for matching `Intl.Collator`; and a generic
+  `sortByKey` method on `Order` once Temper's C++ backend allows it.
 - **A spec:** the source as a readable specification of the default
   order and every option, with its tests beside it, and comparison
   tables so people can choose well.
@@ -86,6 +95,12 @@ so a release that changes keys (a new Unicode version, say) will say so.
   leading zeros), so `file10`'s key is 8 code points.
 - **Before 1.0:** be sure we love the natural key format, since stored
   keys depend on it.
+- **Before 1.0, decide the name:** keep "natural", the usual name for
+  this order and what people search for, or switch to "human"
+  (`sortHuman`, `compareHuman`, `humanKey`) or "smart" (`sortSmart`,
+  `compareSmart`, `smartKey`), since in Java and Kotlin
+  "natural order" means a type's own `compareTo`, the plain order Ordable
+  replaces.
 
 ## Languages
 

@@ -20,9 +20,9 @@ const PLAY_START = `// Numbers compare by value, at any length.
 const files = ["img12.png", "img10.png", "IMG2.png", "img1.png"];
 console.log(sortNatural(files));
 
-// Options: case-sensitive puts every IMG before every img.
-const caseSensitive = Order.new({ caseSensitive: true });
-console.log(caseSensitive.sort(files));
+// Options: case first puts every img before every IMG.
+const caseFirst = Order.new({ casing: Casing.first });
+console.log(caseFirst.sort(files));
 
 // Negative: the first comes first. 0 only for the same string.
 console.log(compareNatural("v1.9", "v1.10"));

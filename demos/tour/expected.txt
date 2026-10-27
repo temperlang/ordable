@@ -19,7 +19,9 @@ key for file10: 41 69 6C 6F 68 35 34 33
 
 ## 3. Options
 uppercase first: img1.png IMG2.png img2.png img10.png img12.png
-case-sensitive: IMG2.png img1.png img2.png img10.png img12.png
+case first: img1.png img2.png img10.png img12.png IMG2.png
+ignoring accents and case, Café vs CAFE: same
+same key: yes
 
 ## 4. Sorting your own types
 tracks by title:

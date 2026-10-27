@@ -26,22 +26,28 @@ checks that every language agrees.
 
 A key starts with a letter naming its options, so keys made with
 different options never pass for each other: `A` for the default, then
-plus 1 for `upperFirst` and plus 2 for `caseSensitive`. Then come the
+plus 1 for `upperFirst` (unless case is ignored), plus 2 for
+`Casing.first`, plus 4 for `ignoreAccents`, and plus 8 for
+`Casing.ignored`. Then come the
 levels of [the comparison](natural.temper.md) in turn, set apart by
 U+0001, which is below every other code point used:
 1. **Letters and numbers:** for each character other than a digit, its
-   base letter, folded fully unless case-sensitive (so `ß` gives
-   `s s`); for each run of digits, its value. A value is its count of
+   base letter, folded fully (so `ß` gives `s s`), plus its case's
+   weight times 0x110000 with `Casing.first`; for each run of digits, its value. A value is its count of
    significant digits, then those digits.
 2. **Leading zeros:** the count for each run of digits.
 3. **Scripts:** for each run of digits, its zero's distance from ASCII
    `0`, so `1` before `١`.
 4. **Accents:** for each character other than a digit, 0 if it has no
-   accent, else its case folding (unless case-sensitive).
-5. **Case,** unless case-sensitive: for each character other than a
-   digit, 0 or 1, whichever case comes first being 0.
-6. **Code points,** unless case-sensitive: for each character other
-   than a digit, 0, or itself if it's an odd form like the Kelvin sign.
+   accent, else its case folding.
+5. **Case:** for each character other than a digit, 0 or 1, whichever
+   case comes first being 0.
+6. **Code points:** for each character other than a digit, 0, or itself
+   if it's an odd form like the Kelvin sign.
+
+A level an option ignores is left empty (the case level with
+`Casing.first`, which has case in the first level), so strings that
+compare equal get the same key.
 
 So the levels after the first hold numbers where 0 is usual, and the
 comparison reads a string that runs out as 0s. Then each level leaves
@@ -64,7 +70,10 @@ keeps them in order too.
     let separator = 1;
 
     let keyWith(s: String, order: Order): String {
-      let fold = !order.caseSensitive;
+      let marked = !order.ignoreAccents;
+      let first = casesFirst(order);
+      let coded = !ignoresCase(order);
+      let cased = coded && !first;
       let main = new StringBuilder();
       let zeros = new StringBuilder();
       let scripts = new StringBuilder();
@@ -79,9 +88,11 @@ keeps them in order too.
       var codesHeld = 0;
       var i = String.begin;
       var rest = -1;
+      // With Casing.first, the case weight of the character a rest is from.
+      var lead = 0;
       while (rest >= 0 || s.hasIndex(i)) {
         if (rest >= 0) {
-          appendCodePoint(main, fullFolds[rest]);
+          appendCodePoint(main, fullFolds[rest] + lead);
           rest = nextRest(rest);
           continue;
         }
@@ -104,18 +115,22 @@ keeps them in order too.
         } else {
           let c = s[i];
           i = s.next(i);
-          let unit = firstUnit(c, fold);
-          rest = foldRest(c, fold);
-          appendCodePoint(main, unit);
+          lead = leadWeight(c, first, order);
+          appendCodePoint(main, firstUnit(c) + lead);
+          rest = foldRest(c);
           if (c < 0x80) {
             // ASCII has no accents or odd forms, so only case can say anything.
             marksHeld += 1;
             codesHeld += 1;
           } else {
-            marksHeld = addWeight(marks, marksHeld, plainOr(if (fold) { foldCase(c) } else { c }, unit, rest));
-            codesHeld = addWeight(codes, codesHeld, codeWeight(c));
+            if (marked) {
+              marksHeld = addWeight(marks, marksHeld, markWeight(c));
+            }
+            if (coded) {
+              codesHeld = addWeight(codes, codesHeld, codeWeight(c));
+            }
           }
-          if (fold) {
+          if (cased) {
             let caseOf = caseWeight(c, order);
             if (caseOf == 0) {
               casesHeld += 1;
@@ -128,7 +143,7 @@ keeps them in order too.
       let key = new StringBuilder();
       key.appendCodePoint(optionsLetter(order)) orelse panic();
       key.append(main.toString());
-      let levels: List<StringBuilder> = if (fold) { [zeros, scripts, marks, cases, codes] } else { [zeros, scripts, marks] };
+      let levels: List<StringBuilder> = [zeros, scripts, marks, cases, codes];
       let sections: List<String> = levels.map { level => level.toString() };
       // Empty sections at the end are left out, separators and all.
       var last = sections.length - 1;
@@ -158,7 +173,11 @@ many 0s are held now.
     }
 
     let optionsLetter(order: Order): Int {
-      char'A' + (if (order.upperFirst) { 1 } else { 0 }) + (if (order.caseSensitive) { 2 } else { 0 })
+      char'A' +
+        (if (order.upperFirst && !ignoresCase(order)) { 1 } else { 0 }) +
+        (if (casesFirst(order)) { 2 } else { 0 }) +
+        (if (order.ignoreAccents) { 4 } else { 0 }) +
+        (if (ignoresCase(order)) { 8 } else { 0 })
     }
 
     let appendCount(builder: StringBuilder, count: Int): Void {
@@ -224,7 +243,7 @@ with code points far past the separator's shift.
     }
 
     test("keys order as each option's compare") { test =>
-      for (let order of [upperOrder, sensitiveOrder]) {
+      for (let order of [upperOrder, firstOrder, firstUpperOrder, accentlessOrder, caselessOrder, baseOrder]) {
         checkKeys(test, fn (a: String, b: String): Int { order.compare(a, b) }, fn (s: String): String { order.key(s) });
       }
     }
@@ -260,10 +279,18 @@ Code points are in hexadecimal.
       // A is uppercase, 1 in the case level by default, 0 with upperFirst.
       assert(keyCodes(naturalKey("Ab")) == "41 64 65 1 1 1 1 4");
       assert(keyCodes(upperOrder.key("Ab")) == "42 64 65 1 1 1 1 3 4");
-      // Case-sensitive: nothing folded, and no case or code point levels.
-      assert(keyCodes(sensitiveOrder.key("Ab")) == "43 44 65");
+      // Grouped by case: the case that comes second adds 0x110000 to the
+      // first level, and there's no case level.
+      assert(keyCodes(firstOrder.key("Ab")) == "43 d7ff 120 4965 65");
+      assert(keyCodes(firstUpperOrder.key("Ab")) == "44 64 d7ff 120 4966");
       // The Kelvin sign is k, uppercase, and an odd form.
       assert(keyCodes(naturalKey("\u{212A}")) == "41 6e 1 1 1 1 4 1 212d");
+      // Ignoring accents leaves the accents level empty.
+      assert(keyCodes(accentlessOrder.key("\u{C9}")) == "45 68 1 1 1 1 4");
+      // Ignoring case leaves out the last two levels, and upperFirst.
+      assert(keyCodes(caselessOrder.key("\u{C9}")) == "49 68 1 1 1 ec");
+      assert(keyCodes(new Order(Casing.ignored, true, false).key("\u{C9}")) == "49 68 1 1 1 ec");
+      assert(keyCodes(baseOrder.key("\u{C9}T\u{C9}")) == keyCodes(baseOrder.key("ete")));
       // Past U+D7FB: U+D7FF, then two digits in base 0x7F00 from U+0100.
       assert(keyCodes(naturalKey("\u{1F600}")) == "41 d7ff 102 2104");
     }

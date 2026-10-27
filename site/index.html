@@ -56,11 +56,13 @@
       </p>
       <div id="samples" class="chips" role="group" aria-label="Sample lists"></div>
       <div class="controls">
-        <button type="button" id="case-sensitive" class="switch" role="switch" aria-checked="false">
-          <span class="knob" aria-hidden="true"></span>Case-sensitive
-        </button>
-        <button type="button" id="edit-list" class="pill" aria-expanded="false" aria-controls="edit-box">Edit list</button>
         <button type="button" id="shuffle" class="pill shuffle"><span aria-hidden="true">⇄</span> Shuffle the input</button>
+        <button type="button" id="edit-list" class="pill" aria-expanded="false" aria-controls="edit-box">Edit list</button>
+        <span class="options" id="options" role="group" aria-label="Ordable's options">
+          <span class="options-label">Case</span>
+          <span id="case-levels" class="segmented" role="group" aria-label="When case is considered"></span>
+          <span id="switches" class="switches"></span>
+        </span>
       </div>
       <div id="edit-box" class="edit-box" hidden>
         <label for="edit-text">One item per line</label>

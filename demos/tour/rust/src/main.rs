@@ -4,7 +4,7 @@
 //! print the same text. See ../README.md for how to run them.
 
 use ordable::builders::OrderBuilder;
-use ordable::{compare_natural, natural_key, sort_natural, sort_natural_by_key};
+use ordable::{Casing, compare_natural, natural_key, sort_natural, sort_natural_by_key};
 use std::sync::Arc;
 
 /// Ordable takes lists of shared strings.
@@ -71,11 +71,16 @@ fn main() {
     section("3. Options");
 
     // An Order has the same functions as methods, with options set through
-    // its builder: here uppercase first, then case-sensitive.
+    // its builder: here uppercase first, then case first.
     let upper_first = OrderBuilder {}.options().upper_first(true).build();  // snippet: options
     println!("uppercase first: {}", join(&upper_first.sort(files.clone())));  // snippet: options
-    let case_sensitive = OrderBuilder {}.options().case_sensitive(true).build();  // snippet: options
-    println!("case-sensitive: {}", join(&case_sensitive.sort(files)));  // snippet: options
+    let case_first = OrderBuilder {}.options().casing(Casing::first()).build();  // snippet: options
+    println!("case first: {}", join(&case_first.sort(files)));  // snippet: options
+    // Or let different strings be equal, here ignoring accents and case,
+    // with equal keys too.
+    let loose = OrderBuilder {}.options().casing(Casing::ignored()).ignore_accents(true).build();  // snippet: equal
+    println!("ignoring accents and case, Café vs CAFE: {}", order(loose.compare("Café", "CAFE")));  // snippet: equal
+    println!("same key: {}", if loose.key("Café") == loose.key("CAFE") { "yes" } else { "no" });  // snippet: equal
 
     section("4. Sorting your own types");
 
