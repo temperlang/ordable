@@ -85,13 +85,13 @@ int main() {
 
   // An Order has the same functions as methods, with options: here
   // uppercase first, then case first.
-  auto upperFirst = Order::make(Casing::last(), true);  // snippet: options
+  auto upperFirst = Order::make(Casing::last, true);  // snippet: options
   std::cout << "uppercase first: " << join(*upperFirst->sort(files)) << "\n";  // snippet: options
-  auto caseFirst = Order::make(Casing::first());  // snippet: options
+  auto caseFirst = Order::make(Casing::first);  // snippet: options
   std::cout << "case first: " << join(*caseFirst->sort(files)) << "\n";  // snippet: options
   // Or let different strings be equal, here ignoring accents and case,
   // with equal keys too.
-  auto loose = Order::make(Casing::ignored(), false, true);  // snippet: equal
+  auto loose = Order::make(Casing::ignored, false, true);  // snippet: equal
   std::cout << "ignoring accents and case, Café vs CAFE: " << order(loose->compare("Café", "CAFE")) << "\n";  // snippet: equal
   std::cout << "same key: " << (loose->key("Café") == loose->key("CAFE") ? "yes" : "no") << "\n";  // snippet: equal
 

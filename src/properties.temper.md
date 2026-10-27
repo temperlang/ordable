@@ -103,7 +103,7 @@ and sorting gives one answer up to equal strings.
     }
 
     test("order with each ignoring option") { test =>
-      for (let order of [accentlessOrder, caselessOrder, baseOrder]) {
-        checkOrder(test, false) { a, b => order.compare(a, b) };
-      }
+      checkOrder(test, false) { a, b => accentlessOrder.compare(a, b) };
+      checkOrder(test, false) { a, b => caselessOrder.compare(a, b) };
+      checkOrder(test, false) { a, b => baseOrder.compare(a, b) };
     }
