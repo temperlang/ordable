@@ -49,23 +49,24 @@ These are candidates for options, without changing the defaults.
 ## Speed
 
 Sorting 20,000 file names, median of several runs (one noisy machine, so
-rough), measured 2026-10-26 with the current defaults: accents, full
+rough), measured 2026-10-27 with the current defaults: accents, full
 case folding, and case as a tiebreak. `sortNatural` makes each string's
 natural sort key once and then sorts by plain string comparison;
 comparing with `compareNatural` directly is shown too.
 
 | Language | Ordable `sortNatural` | Ordable comparator | Others |
 |---|---|---|---|
-| Python | 2.1 s | not measured | `natsort` 0.13 s as a sort key |
-| JavaScript | 0.07–0.08 s | 0.09 s | `Intl.Collator` 0.065 s |
-| Rust | 0.064–0.068 s | 0.07 s | `natord` 0.012 s |
+| Python | 1.7 s | not measured | `natsort` 0.12 s as a sort key |
+| JavaScript | 0.052–0.054 s | 0.08 s | `Intl.Collator` 0.061 s |
+| Rust | 0.046 s | 0.07 s | `natord` 0.012 s |
 
-The defaults do more than they did: before accents and case levels,
-`sortNatural` took 1.1 s in Python and 0.06 s in JavaScript, where it
-beat `Intl.Collator`. In Python, most of the time is generated code doing
-simple integer and string steps through helper calls, which Temper itself
-can make faster, and keys now carry six levels, which a tighter key
-layout before 1.0 could shrink.
+Compact keys made the difference over the day before (timed alternately
+against the old layout): keys for these names went from 3.6 to 1.3 times
+their string's length, and `sortNatural` from 1.9 to 1.7 s in Python, 62–74
+to 52–54 ms in JavaScript, and 67 to 46 ms in Rust, where making 20,000
+keys went from 54 to 34 ms. In Python, most of the time is generated code
+doing simple integer and string steps through helper calls, which Temper
+itself can make faster.
 
 A taste of more speed in Rust (2026-10-26): Temper's Rust output shares
 values with `Arc`, so they could cross threads. Converting a copy of

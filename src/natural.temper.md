@@ -114,14 +114,15 @@ tie:
    `01`.
 3. **Digit scripts:** the first difference, by code point, so `1` before
    `١`.
-4. **Accents:** the characters other than digits, case folded (unless
-   case-sensitive), so `e` before `é`, and `ss` before `ß`.
+4. **Accents:** the first difference in the characters other than
+   digits, case folded (unless case-sensitive), where one without an
+   accent comes first, so `e` before `é`, and `ss` before `ß`.
 5. **Case:** the first character that's not folded in one string but is
    in the other, lowercase first (or uppercase, with `upperFirst`), so
    `e` before `E`.
-6. **Code points:** the first difference, for characters that fold the
-   same and agree in case but still differ, such as `K` and the Kelvin
-   sign `K`.
+6. **Code points:** the first difference in odd forms of letters, such
+   as the Kelvin sign `K`, which folds and has case like `K` but comes
+   after it. Only 30 characters are odd forms.
 
 Case-sensitive, letters aren't folded, so the first and fourth levels
 decide everything, and the last two never come up.
@@ -262,63 +263,78 @@ none; then `nextRest` steps through it.
     }
 
 The last levels, from accents on, over the characters other than
-digits, which by then are the same in both strings: the first
-difference in accents decides, else the first in case, else the first
-in code points.
+digits: the first difference in accents decides, else the first in
+case, else the first in code points. Each level is a weight per
+character, where 0 is the usual case (no accent, the case that comes
+first, an ordinary letter), and a string that runs out reads as 0s, so
+only what's unusual counts and keys can leave trailing 0s out
+([keys](key.temper.md)).
 
     let compareMarks(a: String, b: String, order: Order): Int {
+      let fold = !order.caseSensitive;
       var i = skipDigits(a, String.begin);
       var j = skipDigits(b, String.begin);
       var cases = 0;
       var codes = 0;
-      while (a.hasIndex(i) && b.hasIndex(j)) {
-        let x = a[i];
-        let y = b[j];
-        let diff = markKey(x, order) - markKey(y, order);
+      while (a.hasIndex(i) || b.hasIndex(j)) {
+        var x = -1;
+        if (a.hasIndex(i)) {
+          x = a[i];
+          i = skipDigits(a, a.next(i));
+        }
+        var y = -1;
+        if (b.hasIndex(j)) {
+          y = b[j];
+          j = skipDigits(b, b.next(j));
+        }
+        let diff = markWeight(x, fold) - markWeight(y, fold);
         if (diff != 0) {
           return sign(diff);
         }
-        if (cases == 0) {
-          cases = caseKey(x, order) - caseKey(y, order);
+        if (fold && cases == 0) {
+          cases = caseWeight(x, order) - caseWeight(y, order);
         }
-        if (codes == 0) {
-          codes = x - y;
+        if (fold && codes == 0) {
+          codes = codeWeight(x) - codeWeight(y);
         }
-        i = skipDigits(a, a.next(i));
-        j = skipDigits(b, b.next(j));
       }
-      if (a.hasIndex(i)) {
-        1
-      } else if (b.hasIndex(j)) {
-        -1
-      } else if (cases != 0) {
-        sign(cases)
-      } else {
-        sign(codes)
-      }
+      if (cases != 0) { sign(cases) } else { sign(codes) }
     }
 
-A character for the accents level: case folded, unless case-sensitive.
+The accents weight of `c`, or of none (-1): 0 if it has no accent (its
+case folding, unless case-sensitive, is its first-level unit, all of
+it), else that folding, so `e` comes before `é`, and `ss` before `ß`.
 
-    let markKey(c: Int, order: Order): Int {
-      if (order.caseSensitive) { c } else { foldCase(c) }
+    let markWeight(c: Int, fold: Boolean): Int {
+      if (c < 0x80) {
+        return 0;
+      }
+      let mark = if (fold) { foldCase(c) } else { c };
+      plainOr(mark, firstUnit(c, fold), foldRest(c, fold))
     }
 
-A character's case for the case level, 0 or 1, the one that comes first
-being 0: lowercase (a character its own folding) by default, else
-uppercase. Case-sensitive, it's always 0, since the code point already
-decided.
+    let plainOr(mark: Int, unit: Int, rest: Int): Int {
+      if (mark == unit && rest < 0) { 0 } else { mark }
+    }
 
-    let caseKey(c: Int, order: Order): Int {
-      if (order.caseSensitive) {
+The case weight of `c`, or of none (-1), 0 or 1, the case that comes
+first being 0: lowercase (a character its own folding) by default, else
+uppercase.
+
+    let caseWeight(c: Int, order: Order): Int {
+      if (c < 0) {
         return 0;
       }
       let lower = foldCase(c) == c;
-      if (lower) {
-        if (order.upperFirst) { 1 } else { 0 }
-      } else {
-        if (order.upperFirst) { 0 } else { 1 }
-      }
+      if (lower == order.upperFirst) { 1 } else { 0 }
+    }
+
+The code point weight of `c`, or of none (-1): 0 for most, but an [odd
+case](unicode.temper.md#odd-cases) like the Kelvin sign is itself, so
+it comes after `K`.
+
+    let codeWeight(c: Int): Int {
+      if (isOddCase(c)) { c } else { 0 }
     }
 
     let skipDigits(s: String, start: StringIndex): StringIndex {
@@ -391,6 +407,19 @@ decided.
       assertBefore(test, "A", "b");
       assertBefore(test, "File2", "file10");
       assert(compareNatural("Ab", "Ab") == 0);
+    }
+
+    test("no accent before any accent") { test =>
+      assertBefore(test, "e", "\u{E9}"); // é
+      assertBefore(test, "\u{3B1}", "\u{3AC}"); // α before ά, though ά's code point is lower
+      assertBefore(test, "ss", "\u{DF}"); // ß
+      assertBefore(test, "e\u{E9}", "\u{E9}e"); // the first difference decides
+    }
+
+    test("odd forms last") { test =>
+      assertBefore(test, "K", "\u{212A}"); // Kelvin sign
+      assertBefore(test, "\u{39C}", "\u{B5}"); // Μ before µ, though µ's code point is lower
+      assertBefore(test, "\u{3A3}", "\u{3C2}"); // Σ before ς
     }
 
     test("uppercase first") { test =>
