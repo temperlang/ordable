@@ -110,7 +110,7 @@ function flip(list, items, duration = 450) {
 
 // The hero: file names in plain order, gliding into natural order.
 
-const HERO = ["file1.txt", "file10.txt", "file11.txt", "file2.txt", "file20.txt", "file3.txt"];
+const HERO = ["file1.txt", "file10.txt", "file2.txt", "file3.txt"];
 
 function initHero() {
   const list = $("hero-list");
