@@ -44,9 +44,11 @@ browser, beside plain sorting and `Intl.Collator`.
   digits' script (`1` before `١`), accents (`e` before `é`), case
   (`a` before `A`), and odd forms (`K` before the Kelvin sign) only break
   ties, in that order.
-- Options, in an `Order`: `upperFirst` (`A` before `a` in ties) and
+- Options, in an `Order`: `upperFirst` (`A` before `a` in ties),
   `caseSensitive` (case counts as much as the letter, so every `B` comes
-  before every `a`).
+  before every `a`), and `ignoreAccents` and `ignoreCase`, which let
+  different strings compare equal (`é` equal to `e`, `A` to `a`), with
+  the same keys.
 - No locale rules: that's for ICU or the platform.
 
 Ordable's Unicode tables (decimal digits, case folding as 202 compact
@@ -72,10 +74,11 @@ so a release that changes keys (a new Unicode version, say) will say so.
 - **Done:** defaults as people expect, with case only breaking ties
   (lowercase first), and an `Order` class for options (`upperFirst`,
   `caseSensitive`).
+- **Done:** options that let different strings compare equal
+  (`ignoreAccents` and `ignoreCase`), with matching keys.
 - **Next:** decomposed text (`e` plus a combining accent sorting as `é`);
   smarter punctuation, checked against real-world samples; and more
-  options: signed and decimal numbers, a strength for equality across
-  equivalents, and a generic `sortByKey` method on `Order` once Temper's
+  options: signed and decimal numbers, and a generic `sortByKey` method on `Order` once Temper's
   C++ backend allows it.
 - **A spec:** the source as a readable specification of the default
   order and every option, with its tests beside it, and comparison

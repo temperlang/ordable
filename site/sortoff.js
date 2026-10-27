@@ -3,10 +3,15 @@
 // The hero's before and after, and the sort-off: one list sorted three
 // ways, side by side, with natural keys for a chosen row.
 
-import { Order, compareNatural, naturalKey, sortNatural, sortNaturalByKey } from "ordable";
+import { Order, sortNatural, sortNaturalByKey } from "ordable";
 
-/** Case-sensitive natural order, for the switch. */
-const caseSensitiveOrder = Order.new({ caseSensitive: true });
+/** The option switches, by `Order` option, all off at first: the default order. */
+const SWITCHES = [
+  ["upperFirst", "Uppercase first"],
+  ["caseSensitive", "Case-sensitive"],
+  ["ignoreAccents", "Ignore accents"],
+  ["ignoreCase", "Ignore case"],
+];
 
 /**
  * A sample list, in a deliberately jumbled input order.
@@ -182,18 +187,34 @@ function plainSort(rows) {
   return [...rows].sort((a, b) => (a.text < b.text ? -1 : a.text > b.text ? 1 : 0));
 }
 
-// English, so everyone sees the same thing. Its default sensitivity,
-// "variant", compares accents and then case only to break ties, as
-// Ordable does by default; it has no setting that puts case first.
-const intlCollator = new Intl.Collator("en", { numeric: true });
+/**
+ * The closest Intl.Collator to Ordable's options, in English, so everyone
+ * sees the same thing. Its default sensitivity, "variant", compares
+ * accents and then case only to break ties, as Ordable does by default;
+ * it has no setting that puts case first.
+ *
+ * @param {Record<string, boolean>} options
+ */
+function intlOptions(options) {
+  /** @type {Intl.CollatorOptions} */
+  const intl = { numeric: true };
+  if (options.ignoreAccents || options.ignoreCase) {
+    intl.sensitivity = options.ignoreAccents ? (options.ignoreCase ? "base" : "case") : "accent";
+  }
+  if (options.upperFirst && !options.ignoreCase) intl.caseFirst = "upper";
+  return intl;
+}
 
 export function initSortOff() {
   initHero();
 
   let sample = SAMPLES[0];
-  // Off at first: case only breaks ties, as most people want. Turning it on
-  // shows what putting case first changes.
-  let caseSensitive = false;
+  // All off at first: case only breaks ties, as most people want. The
+  // switches show what each option changes.
+  /** @type {Record<string, boolean>} */
+  const options = {};
+  let order = Order.new(options);
+  let intlCollator = new Intl.Collator("en", intlOptions(options));
   /** @type {Row[]} */
   let input = toRows(sample.items);
   /** @type {string | null} The chosen row's id, for the keys panel. */
@@ -230,9 +251,7 @@ export function initSortOff() {
 
   function render() {
     const plain = plainSort(input);
-    const ordable = caseSensitive
-      ? sortNaturalByKey(input, (row) => row.text, caseSensitiveOrder)
-      : sortNaturalByKey(input, (row) => row.text);
+    const ordable = sortNaturalByKey(input, (row) => row.text, order);
     // A stable sort, so tied rows keep their input order.
     const intl = [...input].sort((a, b) => intlCollator.compare(a.text, b.text));
     ordableOrder = ordable;
@@ -250,31 +269,47 @@ export function initSortOff() {
     $("plain-stat").textContent = off ? `${off} of ${plain.length} out of place` : "All in place";
     $("plain-stat").classList.toggle("bad", off > 0);
 
-    flip($("rows-ordable"), ordable.map((row) => rowElement("ordable", row)));
+    const ordableTies = markTies("ordable", ordable, (a, b) => order.compare(a, b));
+    const ignoring = options.ignoreAccents || options.ignoreCase;
+    $("ordable-stat").textContent = ordableTies
+      ? `${ordableTies} rows equal, as asked`
+      : ignoring ? "No ties in this list" : "No ties, ever";
+    const intlTies = markTies("intl", intl, (a, b) => intlCollator.compare(a, b));
+    $("intl-stat").textContent = intlTies ? `${intlTies} rows in ties` : "No ties in this list";
+    $("intl-stat").classList.toggle("warn", intlTies > 0 && !ignoring);
 
-    // Intl rows tied with a neighbor: different strings it calls equal.
+    // A break before the arguments, for narrow columns.
+    const chosenOptions = SWITCHES.filter(([name]) => options[name]).map(([name]) => `${name}: true`);
+    $("ordable-sub").innerHTML = chosenOptions.length
+      ? `Order.new({ ${chosenOptions.join(", ")} })<wbr>.sort(list)`
+      : "sortNatural<wbr>(list)";
+    $("intl-sub").textContent = Object.entries(intlOptions(options)).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(", ") +
+      (options.caseSensitive ? " (can't put case first)" : "");
+    $("input-order").textContent = input.map((row) => row.text).join(" · ");
+    showKeys();
+  }
+
+  /**
+   * Marks rows tied with a neighbor, different strings that compare
+   * equal, and puts the column in place. Returns how many.
+   *
+   * @param {string} column
+   * @param {Row[]} rows
+   * @param {(a: string, b: string) => number} compare
+   */
+  function markTies(column, rows, compare) {
     let ties = 0;
-    const intlEls = intl.map((row, i) => {
-      const el = rowElement("intl", row);
-      const tied = [intl[i - 1], intl[i + 1]].some(
-        (other) => other && other.text !== row.text && intlCollator.compare(other.text, row.text) === 0,
+    const els = rows.map((row, i) => {
+      const el = rowElement(column, row);
+      const tied = [rows[i - 1], rows[i + 1]].some(
+        (other) => other && other.text !== row.text && compare(other.text, row.text) === 0,
       );
       el.classList.toggle("tie", tied);
       if (tied) ties++;
       return el;
     });
-    flip($("rows-intl"), intlEls);
-    $("intl-stat").textContent = ties ? `${ties} rows in ties` : "No ties in this list";
-    $("intl-stat").classList.toggle("warn", ties > 0);
-    $("ordable-stat").textContent = "No ties, ever";
-
-    // A break before the arguments, for narrow columns.
-    $("ordable-sub").innerHTML = caseSensitive
-      ? "Order.new({ caseSensitive: true })<wbr>.sort(list)"
-      : "sortNatural<wbr>(list)";
-    $("intl-sub").textContent = caseSensitive ? "numeric: true (can't put case first)" : "numeric: true";
-    $("input-order").textContent = input.map((row) => row.text).join(" · ");
-    showKeys();
+    flip($(`rows-${column}`), els);
+    return ties;
   }
 
   // Sample chips.
@@ -302,13 +337,26 @@ export function initSortOff() {
     render();
   }
 
-  // Case-sensitive.
-  const caseSwitch = $("case-sensitive");
-  caseSwitch.addEventListener("click", () => {
-    caseSensitive = !caseSensitive;
-    caseSwitch.setAttribute("aria-checked", String(caseSensitive));
-    render();
-  });
+  // Option switches.
+  for (const [name, label] of SWITCHES) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "switch";
+    button.setAttribute("role", "switch");
+    button.setAttribute("aria-checked", "false");
+    const knob = document.createElement("span");
+    knob.className = "knob";
+    knob.setAttribute("aria-hidden", "true");
+    button.append(knob, label);
+    button.addEventListener("click", () => {
+      options[name] = !options[name];
+      button.setAttribute("aria-checked", String(options[name]));
+      order = Order.new(options);
+      intlCollator = new Intl.Collator("en", intlOptions(options));
+      render();
+    });
+    $("switches").append(button);
+  }
 
   // Edit list: a textarea for people who want to type their own.
   const editBox = $("edit-box");
@@ -417,10 +465,8 @@ export function initSortOff() {
 
   function showKeys() {
     const rows = ordableOrder;
-    const keyOf = caseSensitive ? (/** @type {string} */ s) => caseSensitiveOrder.key(s) : naturalKey;
-    const compare = caseSensitive
-      ? (/** @type {string} */ a, /** @type {string} */ b) => caseSensitiveOrder.compare(a, b)
-      : compareNatural;
+    const keyOf = (/** @type {string} */ s) => order.key(s);
+    const compare = (/** @type {string} */ a, /** @type {string} */ b) => order.compare(a, b);
     // By default, the first neighbors that plain sorting would swap, as 9
     // and 10 are, so the keys show how numbers are written: best when
     // they differ only in their digits. Else the second row, so there's a
@@ -456,12 +502,22 @@ export function initSortOff() {
     $("key-b").parentElement.hidden = $("key-b-name").hidden = !b;
     if (b) {
       const [first, second] = rows.indexOf(b) > i ? [a, b] : [b, a];
-      const plain = keyOf(first.text) <= keyOf(second.text);
-      const natural = compare(first.text, second.text) <= 0;
-      $("key-check").textContent =
-        `${plain ? "✓" : "✗"} key(${first.text}) ${plain ? "<" : ">"} key(${second.text}) by plain comparison, ` +
-        `just as ${caseSensitive ? "the case-sensitive order" : "compareNatural"} puts ${first.text} ` +
-        `${natural ? "first" : "second"}${differAt >= 0 ? ", deciding at the highlighted code points" : ""}.`;
+      const keyFirst = keyOf(first.text);
+      const keySecond = keyOf(second.text);
+      const named = SWITCHES.some(([name]) => options[name]) ? "this order" : "compareNatural";
+      if (compare(first.text, second.text) === 0) {
+        const same = keyFirst === keySecond;
+        $("key-check").textContent =
+          `${same ? "✓" : "✗"} key(${first.text}) ${same ? "=" : "≠"} key(${second.text}), ` +
+          `just as ${named} calls them equal.`;
+      } else {
+        const plain = keyFirst <= keySecond;
+        const natural = compare(first.text, second.text) <= 0;
+        $("key-check").textContent =
+          `${plain ? "✓" : "✗"} key(${first.text}) ${plain ? "<" : ">"} key(${second.text}) by plain comparison, ` +
+          `just as ${named} puts ${first.text} ` +
+          `${natural ? "first" : "second"}${differAt >= 0 ? ", deciding at the highlighted code points" : ""}.`;
+      }
     } else {
       $("key-check").textContent = "";
     }

@@ -40,7 +40,11 @@ space, a dot, and a dash.
       char' ', char'.', char'-',
     ];
 
-    let checkTotalOrder(test: Test, compare: fn (String, String): Int): Void {
+With an option that ignores something, different strings can compare
+equal, so `total` is false: the order is then total over what's left,
+and sorting gives one answer up to equal strings.
+
+    let checkOrder(test: Test, total: Boolean, compare: fn (String, String): Int): Void {
       let gen = new Strings(1);
       let builder = new ListBuilder<String>();
       for (var i = 0; i < 300; i += 1) {
@@ -55,7 +59,7 @@ space, a dot, and a dash.
           let ab = compare(a, b);
           assert(sign(ab) == -sign(compare(b, a))) { "${a} and ${b} not antisymmetric" }
           if (ab == 0) {
-            assert(a == b) { "${a} and ${b} compare equal" }
+            assert(!total || a == b) { "${a} and ${b} compare equal" }
           } else {
             assert(a != b) { "${a} compares ${ab.toString()} to itself" }
           }
@@ -80,14 +84,25 @@ space, a dot, and a dash.
         reversed.add(strings[i]);
       }
       let again = reversed.toList().sorted { a, b => compare(a, b) };
-      assert(again.join("|") { s => s } == sorted.join("|") { s => s }) { "sort depends on input order" }
+      for (var i = 0; i < sorted.length; i += 1) {
+        assert(compare(again[i], sorted[i]) == 0) { "sort depends on input order at ${i.toString()}" }
+      }
+      if (total) {
+        assert(again.join("|") { s => s } == sorted.join("|") { s => s }) { "sort depends on input order" }
+      }
     }
 
     test("total order") { test =>
-      checkTotalOrder(test) { a, b => compareNatural(a, b) };
+      checkOrder(test, true) { a, b => compareNatural(a, b) };
     }
 
     test("total order with each option") { test =>
-      checkTotalOrder(test) { a, b => upperOrder.compare(a, b) };
-      checkTotalOrder(test) { a, b => sensitiveOrder.compare(a, b) };
+      checkOrder(test, true) { a, b => upperOrder.compare(a, b) };
+      checkOrder(test, true) { a, b => sensitiveOrder.compare(a, b) };
+    }
+
+    test("order with each ignoring option") { test =>
+      for (let order of [accentlessOrder, caselessOrder, baseOrder]) {
+        checkOrder(test, false) { a, b => order.compare(a, b) };
+      }
     }

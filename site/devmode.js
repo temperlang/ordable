@@ -43,8 +43,8 @@ const SPOTS = [
   {
     id: "options",
     title: "Options",
-    about: "By default, case only breaks ties, lowercase first. An `Order` with options changes that: `upperFirst`, or `caseSensitive`, where every B comes before every a, as in plain sorting.",
-    target: () => find("#case-sensitive"),
+    about: "By default, case only breaks ties, lowercase first. An `Order` with options changes that: `upperFirst`; `caseSensitive`, where every B comes before every a, as in plain sorting; or `ignoreAccents` and `ignoreCase`, where different strings can be equal, with equal keys.",
+    target: () => find("#switches"),
   },
   {
     id: "ties",

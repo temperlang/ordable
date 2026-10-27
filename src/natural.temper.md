@@ -76,12 +76,23 @@ changes, such as `{ upperFirst: true }`.
 - **`caseSensitive`:** case counts as much as the letter, as in plain
   sorting, so every `B` comes before every `a`, and `ß` doesn't match
   `ss`. Then letters compare by code point, so `upperFirst` has no say.
+- **`ignoreAccents`:** accents don't count, so `é` equals `e`, and `ß`
+  equals `ss`. Leading zeros and digit scripts still count.
+- **`ignoreCase`:** case doesn't count, so `A` equals `a`, and neither do
+  odd forms, so `ς` equals `σ`, and the Kelvin sign equals `K`. Then
+  `upperFirst` has no say, and nor does this when case-sensitive.
+
+With either of the last two, different strings can compare equal, and
+their keys are then the same, so a database can match them by key.
+Sorting keeps equal strings in their input order.
 
 The options, and the functions as methods:
 
     export class Order(
       public upperFirst: Boolean = false,
       public caseSensitive: Boolean = false,
+      public ignoreAccents: Boolean = false,
+      public ignoreCase: Boolean = false,
     ) {
       public compare(a: String, b: String): Int { compareWith(a, b, this) }
 
@@ -94,7 +105,7 @@ The options, and the functions as methods:
 
 The default order, behind the functions above.
 
-    let natural: Order = new Order(false, false);
+    let natural: Order = new Order(false, false, false, false);
 
     let sortKeysFrom = 16;
 
@@ -131,7 +142,8 @@ Case-sensitive, letters aren't folded, so the first and fourth levels
 decide everything, and the last two never come up.
 
 Two strings tie at every level only if they're the same, which keeps the
-order total ([order properties](properties.temper.md)).
+order total ([order properties](properties.temper.md)). `ignoreAccents`
+skips the accents level, and `ignoreCase` the last two.
 
 Accents come from Unicode's canonical decompositions, and case folding
 is Unicode's ([unicode](unicode.temper.md)).
@@ -274,7 +286,11 @@ only what's unusual counts and keys can leave trailing 0s out
 ([keys](key.temper.md)).
 
     let compareMarks(a: String, b: String, order: Order): Int {
-      let fold = !order.caseSensitive;
+      let marks = !order.ignoreAccents;
+      let fold = !order.caseSensitive && !order.ignoreCase;
+      if (!marks && !fold) {
+        return 0;
+      }
       var i = skipDigits(a, String.begin);
       var j = skipDigits(b, String.begin);
       var cases = 0;
@@ -290,9 +306,11 @@ only what's unusual counts and keys can leave trailing 0s out
           y = b[j];
           j = skipDigits(b, b.next(j));
         }
-        let diff = markWeight(x, fold) - markWeight(y, fold);
-        if (diff != 0) {
-          return sign(diff);
+        if (marks) {
+          let diff = markWeight(x, !order.caseSensitive) - markWeight(y, !order.caseSensitive);
+          if (diff != 0) {
+            return sign(diff);
+          }
         }
         if (fold && cases == 0) {
           cases = caseWeight(x, order) - caseWeight(y, order);
@@ -374,6 +392,9 @@ it comes after `K`.
 
     let sensitiveOrder: Order = { caseSensitive: true };
     let upperOrder: Order = { upperFirst: true };
+    let accentlessOrder: Order = { ignoreAccents: true };
+    let caselessOrder: Order = { ignoreCase: true };
+    let baseOrder: Order = { ignoreAccents: true, ignoreCase: true };
 
     test("numbers compare by value") { test =>
       assertBefore(test, "file2", "file10");
@@ -516,6 +537,35 @@ it comes after `K`.
       assert(sorted.join(" ") { s => s } == "img1.png img2.png IMG2.png img10.png img12.png");
       let sensitive = sensitiveOrder.sort(names);
       assert(sensitive.join(" ") { s => s } == "IMG2.png img1.png img2.png img10.png img12.png");
+    }
+
+    test("ignoring accents") { test =>
+      assert(accentlessOrder.compare("\u{E9}cole", "ecole") == 0);
+      assert(accentlessOrder.compare("Stra\u{DF}e", "Strasse") == 0);
+      // Case still counts, and so do leading zeros and digit scripts.
+      assertBeforeIn(test, accentlessOrder, "\u{E9}", "E");
+      assertBeforeIn(test, accentlessOrder, "x1", "x01");
+      assertBeforeIn(test, accentlessOrder, "x1", "x\u{661}");
+      assertBeforeIn(test, accentlessOrder, "\u{E9}2", "e10");
+    }
+
+    test("ignoring case") { test =>
+      assert(caselessOrder.compare("File2", "file2") == 0);
+      assert(caselessOrder.compare("\u{3C2}", "\u{3A3}") == 0); // ς and Σ
+      assert(caselessOrder.compare("\u{212A}", "k") == 0); // the Kelvin sign
+      assertBeforeIn(test, caselessOrder, "E", "\u{E9}");
+      assertBeforeIn(test, caselessOrder, "file2", "FILE10");
+      // No say when case-sensitive.
+      let both: Order = { caseSensitive: true, ignoreCase: true };
+      assertBeforeIn(test, both, "B", "a");
+    }
+
+    test("ignoring both") { test =>
+      assert(baseOrder.compare("\u{C9}T\u{C9}", "ete") == 0);
+      assertBeforeIn(test, baseOrder, "ete", "\u{E9}t\u{E9}2");
+      // Equal strings keep their input order when sorting.
+      let sorted = baseOrder.sort(["b", "\u{E9}", "E", "a", "e"]);
+      assert(sorted.join(" ") { s => s } == "a b \u{E9} E e");
     }
 
     class Track(public title: String, public seconds: Int) {}

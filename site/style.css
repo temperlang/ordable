@@ -269,6 +269,10 @@ ol.rows b {
   margin: 1rem 0 0.5rem;
 }
 
+.switches {
+  display: contents;
+}
+
 .switch {
   display: inline-flex;
   align-items: center;
