@@ -5,7 +5,7 @@
 
 local ordable = require("ordable")
 local compareNatural, sortNatural, sortNaturalByKey = ordable.compareNatural, ordable.sortNatural, ordable.sortNaturalByKey
-local Order = ordable.Order
+local Casing, Order = ordable.Casing, ordable.Order
 
 local function order(n)
   if n < 0 then return "before" elseif n > 0 then return "after" else return "same" end
@@ -55,14 +55,14 @@ print("key for file10: " .. table.concat(hex, " "))  -- snippet: keys
 section("3. Options")
 
 -- An Order has the same functions as methods, with options: here
--- uppercase first, then grouped by case.
-local upperFirst = Order(true)  -- snippet: options
+-- uppercase first, then case first.
+local upperFirst = Order(Casing.last, true)  -- snippet: options
 print("uppercase first: " .. table.concat(upperFirst:sort(files), " "))  -- snippet: options
-local grouped = Order(false, true)  -- snippet: options
-print("grouped by case: " .. table.concat(grouped:sort(files), " "))  -- snippet: options
+local caseFirst = Order(Casing.first)  -- snippet: options
+print("case first: " .. table.concat(caseFirst:sort(files), " "))  -- snippet: options
 -- Or let different strings be equal, here ignoring accents and case,
 -- with equal keys too.
-local loose = Order(false, false, true, true)  -- snippet: equal
+local loose = Order(Casing.ignored, false, true)  -- snippet: equal
 print("ignoring accents and case, Café vs CAFE: " .. order(loose:compare("Café", "CAFE")))  -- snippet: equal
 print("same key: " .. (loose:key("Café") == loose:key("CAFE") and "yes" or "no"))  -- snippet: equal
 

@@ -3,24 +3,21 @@
 // The hero's before and after, and the sort-off: one list sorted three
 // ways, side by side, with natural keys for a chosen row.
 
-import { Order, sortNatural, sortNaturalByKey } from "ordable";
+import { Casing, Order, sortNatural, sortNaturalByKey } from "ordable";
 
-/**
- * How much case counts, from least to most, as one choice with the
- * `Order` options each sets, since they're levels of one thing. Breaking
- * ties, the default, is chosen at first.
- */
-const CASE_LEVELS = [
-  { label: "Ignored", options: { ignoreCase: true } },
-  { label: "Breaks ties", options: {} },
-  { label: "Grouped", options: { groupByCase: true } },
-];
+/** How much case counts, from least to most: `Casing`'s values, by name. */
+const CASINGS = ["ignored", "last", "first"];
 
 /** The other options, as switches, by `Order` option, off at first. */
 const SWITCHES = [
   ["upperFirst", "Uppercase first"],
   ["ignoreAccents", "Ignore accents"],
 ];
+
+/**
+ * The options chosen: `casing` by name, and the switches.
+ * @typedef {{ casing: string, upperFirst?: boolean, ignoreAccents?: boolean }} Options
+ */
 
 /**
  * A sample list, in a deliberately jumbled input order.
@@ -202,12 +199,12 @@ function plainSort(rows) {
  * accents and then case only to break ties, as Ordable does by default;
  * it has no setting that puts case first.
  *
- * @param {Record<string, boolean>} options
+ * @param {Options} options
  */
 function intlOptions(options) {
   /** @type {Intl.CollatorOptions} */
   const intl = { numeric: true };
-  const ignoreCase = options.ignoreCase && !options.groupByCase;
+  const ignoreCase = options.casing === "ignored";
   if (options.ignoreAccents || ignoreCase) {
     intl.sensitivity = options.ignoreAccents ? (ignoreCase ? "base" : "case") : "accent";
   }
@@ -221,17 +218,18 @@ export function initSortOff() {
   let sample = SAMPLES[0];
   // The default at first: case only breaks ties, as most people want.
   // The options show what each changes.
-  let caseLevel = 1;
-  /** @type {Record<string, boolean>} The switches' options. */
-  const switched = {};
-  /** @type {Record<string, boolean>} */
-  let options = {};
-  let order = Order.new(options);
+  /** @type {Options} */
+  const options = { casing: "last" };
+  let order = Order.new({});
   let intlCollator = new Intl.Collator("en", intlOptions(options));
 
+  /** How many options differ from the default. */
+  function chosenOptionsCount() {
+    return (options.casing === "last" ? 0 : 1) + SWITCHES.filter(([name]) => options[name]).length;
+  }
+
   function setOrder() {
-    options = { ...CASE_LEVELS[caseLevel].options, ...switched };
-    order = Order.new(options);
+    order = Order.new({ ...options, casing: Casing[options.casing] });
     intlCollator = new Intl.Collator("en", intlOptions(options));
     render();
   }
@@ -290,7 +288,7 @@ export function initSortOff() {
     $("plain-stat").classList.toggle("bad", off > 0);
 
     const ordableTies = markTies("ordable", ordable, (a, b) => order.compare(a, b));
-    const ignoring = options.ignoreAccents || options.ignoreCase;
+    const ignoring = options.ignoreAccents || options.casing === "ignored";
     $("ordable-stat").textContent = ordableTies
       ? `${ordableTies} rows equal, as asked`
       : ignoring ? "No ties in this list" : "No ties, ever";
@@ -299,12 +297,15 @@ export function initSortOff() {
     $("intl-stat").classList.toggle("warn", intlTies > 0 && !ignoring);
 
     // A break before the arguments, for narrow columns.
-    const chosenOptions = Object.keys(options).filter((name) => options[name]).map((name) => `${name}: true`);
+    const chosenOptions = [
+      ...(options.casing === "last" ? [] : [`casing: Casing.${options.casing}`]),
+      ...SWITCHES.filter(([name]) => options[name]).map(([name]) => `${name}: true`),
+    ];
     $("ordable-sub").innerHTML = chosenOptions.length
       ? `Order.new({ ${chosenOptions.join(", ")} })<wbr>.sort(list)`
       : "sortNatural<wbr>(list)";
     $("intl-sub").textContent = Object.entries(intlOptions(options)).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(", ") +
-      (options.groupByCase ? " (can't group by case)" : "");
+      (options.casing === "first" ? " (can't put case first)" : "");
     $("input-order").textContent = input.map((row) => row.text).join(" · ");
     showKeys();
   }
@@ -358,17 +359,17 @@ export function initSortOff() {
   }
 
   // How much case counts.
-  const levelButtons = CASE_LEVELS.map(({ label }, level) => {
+  const levelButtons = CASINGS.map((casing) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.textContent = label;
-    button.setAttribute("aria-pressed", String(level === caseLevel));
+    button.textContent = casing[0].toUpperCase() + casing.slice(1);
+    button.setAttribute("aria-pressed", String(casing === options.casing));
     button.addEventListener("click", () => {
-      caseLevel = level;
+      options.casing = casing;
       for (const b of levelButtons) b.setAttribute("aria-pressed", String(b === button));
       // Uppercase first has no say when case is ignored.
       const upper = /** @type {HTMLButtonElement} */ ($("switch-upperFirst"));
-      upper.disabled = CASE_LEVELS[level].options.ignoreCase === true;
+      upper.disabled = casing === "ignored";
       setOrder();
     });
     return button;
@@ -388,8 +389,8 @@ export function initSortOff() {
     knob.setAttribute("aria-hidden", "true");
     button.append(knob, label);
     button.addEventListener("click", () => {
-      switched[name] = !switched[name];
-      button.setAttribute("aria-checked", String(switched[name]));
+      options[name] = !options[name];
+      button.setAttribute("aria-checked", String(options[name]));
       setOrder();
     });
     $("switches").append(button);
@@ -541,7 +542,7 @@ export function initSortOff() {
       const [first, second] = rows.indexOf(b) > i ? [a, b] : [b, a];
       const keyFirst = keyOf(first.text);
       const keySecond = keyOf(second.text);
-      const named = Object.values(options).some((on) => on) ? "this order" : "compareNatural";
+      const named = chosenOptionsCount() ? "this order" : "compareNatural";
       if (compare(first.text, second.text) === 0) {
         const same = keyFirst === keySecond;
         $("key-check").textContent =

@@ -270,14 +270,11 @@ ol.rows b {
 }
 
 .options {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 0.75rem;
-  margin: 0 0 0.5rem;
+  display: contents;
 }
 
 .options-label {
+  margin-left: 0.5rem;
   color: var(--muted);
   font-size: 0.9rem;
 }
@@ -1004,8 +1001,8 @@ footer {
   position: absolute;
   top: 0;
   left: 0;
-  /* Above an open card, so the badges it would cover stay reachable. */
-  z-index: 26;
+  /* Below an open card, so no badge shows inside it. */
+  z-index: 24;
 }
 
 .dev-badge {

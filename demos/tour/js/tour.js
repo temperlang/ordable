@@ -3,7 +3,7 @@
 // The same tour exists for each language Ordable supports, and they all print
 // the same text. See ../README.md for how to run them.
 
-import { Order, compareNatural, naturalKey, sortNatural, sortNaturalByKey } from "ordable";
+import { Casing, Order, compareNatural, naturalKey, sortNatural, sortNaturalByKey } from "ordable";
 
 const order = (n) => (n < 0 ? "before" : n > 0 ? "after" : "same");
 
@@ -44,14 +44,14 @@ console.log(`key for file10: ${hex.join(" ")}`);  // snippet: keys
 section("3. Options");
 
 // An Order has the same functions as methods, with options named in an
-// object: here uppercase first, then grouped by case.
+// object: here uppercase first, then case first.
 const upperFirst = Order.new({ upperFirst: true });  // snippet: options
 console.log(`uppercase first: ${upperFirst.sort(files).join(" ")}`);  // snippet: options
-const grouped = Order.new({ groupByCase: true });  // snippet: options
-console.log(`grouped by case: ${grouped.sort(files).join(" ")}`);  // snippet: options
+const caseFirst = Order.new({ casing: Casing.first });  // snippet: options
+console.log(`case first: ${caseFirst.sort(files).join(" ")}`);  // snippet: options
 // Or let different strings be equal, here ignoring accents and case,
 // with equal keys too.
-const loose = Order.new({ ignoreAccents: true, ignoreCase: true });  // snippet: equal
+const loose = Order.new({ casing: Casing.ignored, ignoreAccents: true });  // snippet: equal
 console.log(`ignoring accents and case, Café vs CAFE: ${order(loose.compare("Café", "CAFE"))}`);  // snippet: equal
 console.log(`same key: ${loose.key("Café") === loose.key("CAFE") ? "yes" : "no"}`);  // snippet: equal
 

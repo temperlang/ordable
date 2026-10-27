@@ -70,38 +70,60 @@ An `Order` is natural order with options, with `compare`, `sort`, and
 compile a generic method that calls a generic function, so it waits.) Every option has a default, so an object literal names only what
 changes, such as `{ upperFirst: true }`.
 
-How much case counts is one of three levels, from least to most:
+The options answer two questions. First, how much case counts, from
+least to most, which is when it's considered:
 
-- **`ignoreCase`:** case doesn't count at all, so `File` equals `file`.
-  Nor do odd forms, so `ς` equals `σ`, and the Kelvin sign equals `K`.
-- **By default,** case only breaks ties, after letters, numbers, and
-  accents: `file`, `File`, `file2`.
-- **`groupByCase`:** case counts before the letter, so every lowercase
+- **`Casing.ignored`:** case doesn't count at all, so `File` equals
+  `file`. Nor do odd forms, so `ς` equals `σ`, and the Kelvin sign equals
+  `K`.
+- **`Casing.last`,** the default: case only breaks ties, after letters,
+  numbers, and accents, so `file`, `File`, `file2`.
+- **`Casing.first`:** case counts before the letter, so every lowercase
   letter comes before every uppercase one: `file`, `file2`, `File`, as
   in plain sorting but lowercase first. Characters without case count as
-  lowercase, and digits as numbers, before letters. This wins over
-  `ignoreCase`.
+  lowercase, and digits as numbers, before letters.
 
-And two more options:
+`upperFirst` puts uppercase first wherever case counts: `File` before
+`file` with `Casing.last`, and every uppercase letter before every
+lowercase one (and before characters without case) with `Casing.first`.
 
-- **`upperFirst`:** uppercase comes first wherever case counts: `File`
-  before `file` by default, and with `groupByCase`, every uppercase
-  letter before every lowercase one (and before characters without
-  case).
-- **`ignoreAccents`:** accents don't count, so `é` equals `e`, and `ß`
-  equals `ss`. Leading zeros and digit scripts still count.
+Second, which strings are equal. By default, only the same string, but
+with `Casing.ignored` or `ignoreAccents` (`é` equals `e`, and `ß` equals
+`ss`, though leading zeros and digit scripts still count), different
+strings can compare equal. Their keys are then the same, so a database
+can match them by key, and sorting keeps equal strings in their input
+order.
 
-With `ignoreCase` or `ignoreAccents`, different strings can compare
-equal, and their keys are then the same, so a database can match them by
-key. Sorting keeps equal strings in their input order.
+How much case counts. The constructor is private, so these three are
+all there are.
+
+    export class Casing {
+      public name: String;
+
+      private constructor(name: String) {
+        this.name = name;
+      }
+
+      public toString(): String { name }
+
+      @operator("==")
+      public eq(other: Casing): Boolean { name == other.name }
+
+      public static ignored = new Casing("ignored");
+      public static last = new Casing("last");
+      public static first = new Casing("first");
+    }
+
+    let ignoresCase(order: Order): Boolean { order.casing.name == "ignored" }
+
+    let casesFirst(order: Order): Boolean { order.casing.name == "first" }
 
 The options, and the functions as methods:
 
     export class Order(
+      public casing: Casing = Casing.last,
       public upperFirst: Boolean = false,
-      public groupByCase: Boolean = false,
       public ignoreAccents: Boolean = false,
-      public ignoreCase: Boolean = false,
     ) {
       public compare(a: String, b: String): Int { compareWith(a, b, this) }
 
@@ -114,7 +136,7 @@ The options, and the functions as methods:
 
 The default order, behind the functions above.
 
-    let natural: Order = new Order(false, false, false, false);
+    let natural: Order = new Order(Casing.last, false, false);
 
     let sortKeysFrom = 16;
 
@@ -126,7 +148,7 @@ tie:
 1. **Letters and numbers.** Both strings are walked together, a
    character or a run of digits at a time. Accents don't count at this
    level, so `é` sorts with `e`, and letters fold fully, so `ß` matches
-   `ss`, and `Σ` matches `σ` and `ς`. With `groupByCase`, each letter's
+   `ss`, and `Σ` matches `σ` and `ς`. With `Casing.first`, each letter's
    case comes first, before the letter itself. Numbers
    compare by value without converting them, so any number of digits
    works without overflow: after skipping leading zeros, more digits
@@ -148,27 +170,26 @@ tie:
    as the Kelvin sign `K`, which folds and has case like `K` but comes
    after it. Only 30 characters are odd forms.
 
-With `groupByCase`, case is already in the first level, so the case
+With `Casing.first`, case is already in the first level, so the case
 level is left out.
 
 Two strings tie at every level only if they're the same, which keeps the
 order total ([order properties](properties.temper.md)). `ignoreAccents`
-skips the accents level, and `ignoreCase` the last two.
-
-    let ignoresCase(order: Order): Boolean { order.ignoreCase && !order.groupByCase }
+skips the accents level, and `Casing.ignored` the last two.
 
 Accents come from Unicode's canonical decompositions, and case folding
 is Unicode's ([unicode](unicode.temper.md)).
 
     let compareWith(a: String, b: String, order: Order): Int {
+      let first = casesFirst(order);
       var i = String.begin;
       var j = String.begin;
       // Where the rest of a full folding (ß's second s) is in `fullFolds`, or -1.
       var restA = -1;
       var restB = -1;
-      // With groupByCase, the case weight of the character a rest is from.
-      var groupA = 0;
-      var groupB = 0;
+      // With Casing.first, the case weight of the character a rest is from.
+      var leadA = 0;
+      var leadB = 0;
       var zeros = 0;
       var scripts = 0;
       while ((restA >= 0 || a.hasIndex(i)) && (restB >= 0 || b.hasIndex(j))) {
@@ -210,24 +231,24 @@ is Unicode's ([unicode](unicode.temper.md)).
         }
         var unitA = 0;
         if (restA >= 0) {
-          unitA = fullFolds[restA] + groupA;
+          unitA = fullFolds[restA] + leadA;
           restA = nextRest(restA);
         } else {
           let c = a[i];
           i = a.next(i);
-          groupA = groupWeight(c, order);
-          unitA = firstUnit(c) + groupA;
+          leadA = leadWeight(c, first, order);
+          unitA = firstUnit(c) + leadA;
           restA = foldRest(c);
         }
         var unitB = 0;
         if (restB >= 0) {
-          unitB = fullFolds[restB] + groupB;
+          unitB = fullFolds[restB] + leadB;
           restB = nextRest(restB);
         } else {
           let c = b[j];
           j = b.next(j);
-          groupB = groupWeight(c, order);
-          unitB = firstUnit(c) + groupB;
+          leadB = leadWeight(c, first, order);
+          unitB = firstUnit(c) + leadB;
           restB = foldRest(c);
         }
         if (unitA != unitB) {
@@ -286,15 +307,15 @@ none; then `nextRest` steps through it.
       if (entry >= 0 && fullFolds[entry + 2] != 0) { entry + 2 } else { -1 }
     }
 
-With `groupByCase`, what the case of `c` adds to each of its first-level
+With `Casing.first` (`first`), what the case of `c` adds to each of its first-level
 units: 0 for the case that comes first, and for digits, else past every
 code point, so case decides before the letter.
 
-    let groupWeight(c: Int, order: Order): Int {
-      if (order.groupByCase && digitZero(c) < 0) { caseWeight(c, order) * groupStep } else { 0 }
+    let leadWeight(c: Int, first: Boolean, order: Order): Int {
+      if (first && digitZero(c) < 0) { caseWeight(c, order) * leadStep } else { 0 }
     }
 
-    let groupStep = 0x110000;
+    let leadStep = 0x110000;
 
     let nextRest(at: Int): Int {
       if (((at + 1) % 4 orelse panic()) != 0 && fullFolds[at + 1] != 0) { at + 1 } else { -1 }
@@ -310,8 +331,8 @@ only what's unusual counts and keys can leave trailing 0s out
 
     let compareMarks(a: String, b: String, order: Order): Int {
       let marks = !order.ignoreAccents;
-      let cased = !order.groupByCase && !order.ignoreCase;
       let coded = !ignoresCase(order);
+      let cased = coded && !casesFirst(order);
       if (!marks && !coded) {
         return 0;
       }
@@ -413,12 +434,12 @@ it comes after `K`.
       assert(order.compare(b, a) > 0) { "${b} not after ${a}" }
     }
 
-    let groupOrder: Order = { groupByCase: true };
-    let groupUpperOrder: Order = { groupByCase: true, upperFirst: true };
+    let firstOrder: Order = { casing: Casing.first };
+    let firstUpperOrder: Order = { casing: Casing.first, upperFirst: true };
     let upperOrder: Order = { upperFirst: true };
     let accentlessOrder: Order = { ignoreAccents: true };
-    let caselessOrder: Order = { ignoreCase: true };
-    let baseOrder: Order = { ignoreAccents: true, ignoreCase: true };
+    let caselessOrder: Order = { casing: Casing.ignored };
+    let baseOrder: Order = { casing: Casing.ignored, ignoreAccents: true };
 
     test("numbers compare by value") { test =>
       assertBefore(test, "file2", "file10");
@@ -476,20 +497,20 @@ it comes after `K`.
       assertBeforeIn(test, upperOrder, "File2", "file10");
     }
 
-    test("grouped by case") { test =>
+    test("case first") { test =>
       // Case counts before the letter: every lowercase letter first.
-      assertBeforeIn(test, groupOrder, "a", "B");
-      assertBeforeIn(test, groupOrder, "z", "A");
-      assertBeforeIn(test, groupOrder, "img10", "IMG2");
-      assertBeforeIn(test, groupOrder, "img2", "img10");
-      assertBeforeIn(test, groupOrder, "\u{E9}", "E");
+      assertBeforeIn(test, firstOrder, "a", "B");
+      assertBeforeIn(test, firstOrder, "z", "A");
+      assertBeforeIn(test, firstOrder, "img10", "IMG2");
+      assertBeforeIn(test, firstOrder, "img2", "img10");
+      assertBeforeIn(test, firstOrder, "\u{E9}", "E");
       // Folding still holds within a case: ß matches ss, ẞ matches SS.
-      assertBeforeIn(test, groupOrder, "Strasse", "Stra\u{DF}e");
-      assertBeforeIn(test, groupOrder, "STRASSE", "STRA\u{1E9E}E");
+      assertBeforeIn(test, firstOrder, "Strasse", "Stra\u{DF}e");
+      assertBeforeIn(test, firstOrder, "STRASSE", "STRA\u{1E9E}E");
       // Uppercase first: every uppercase letter first.
-      assertBeforeIn(test, groupUpperOrder, "B", "a");
-      assertBeforeIn(test, groupUpperOrder, "IMG10", "img2");
-      assertBeforeIn(test, groupUpperOrder, "File2", "File10");
+      assertBeforeIn(test, firstUpperOrder, "B", "a");
+      assertBeforeIn(test, firstUpperOrder, "IMG10", "img2");
+      assertBeforeIn(test, firstUpperOrder, "File2", "File10");
     }
 
     test("case beyond ASCII") { test =>
@@ -566,10 +587,10 @@ it comes after `K`.
       let names = ["img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png"];
       let sorted = sortNatural(names);
       assert(sorted.join(" ") { s => s } == "img1.png img2.png IMG2.png img10.png img12.png");
-      let grouped = groupOrder.sort(names);
-      assert(grouped.join(" ") { s => s } == "img1.png img2.png img10.png img12.png IMG2.png");
-      let upperGrouped = groupUpperOrder.sort(names);
-      assert(upperGrouped.join(" ") { s => s } == "IMG2.png img1.png img2.png img10.png img12.png");
+      let firstCased = firstOrder.sort(names);
+      assert(firstCased.join(" ") { s => s } == "img1.png img2.png img10.png img12.png IMG2.png");
+      let firstUpper = firstUpperOrder.sort(names);
+      assert(firstUpper.join(" ") { s => s } == "IMG2.png img1.png img2.png img10.png img12.png");
     }
 
     test("ignoring accents") { test =>
@@ -588,9 +609,6 @@ it comes after `K`.
       assert(caselessOrder.compare("\u{212A}", "k") == 0); // the Kelvin sign
       assertBeforeIn(test, caselessOrder, "E", "\u{E9}");
       assertBeforeIn(test, caselessOrder, "file2", "FILE10");
-      // groupByCase wins.
-      let both: Order = { groupByCase: true, ignoreCase: true };
-      assertBeforeIn(test, both, "a", "B");
     }
 
     test("ignoring both") { test =>
@@ -617,8 +635,8 @@ it comes after `K`.
       };
       assert(calls == 4);
       assert(titles.join(", ") { t => t.title } == "Track 1: Intro, track 2: Rise, Track 2: Rise again, Track 10: Outro");
-      let grouped = sortNaturalByKey(tracks, fn (track: Track): String { track.title }, groupUpperOrder);
-      assert(grouped.join(", ") { t => t.title } == "Track 1: Intro, Track 2: Rise again, Track 10: Outro, track 2: Rise");
+      let firstCased = sortNaturalByKey(tracks, fn (track: Track): String { track.title }, firstUpperOrder);
+      assert(firstCased.join(", ") { t => t.title } == "Track 1: Intro, Track 2: Rise again, Track 10: Outro, track 2: Rise");
     }
 
 Equal keys keep their order.
