@@ -32,6 +32,8 @@ public class Tour {
 
         // Negative means the first comes first, positive the second, and 0 only
         // for the same string. Case only breaks ties, lowercase first.
+        // "Natural" here isn't Comparator.naturalOrder(), which for strings
+        // is plain code-unit order, with file10 before file2.
         String[][] pairs = {  // snippet: compare
             {"file2", "file10"}, {"x01", "x1"}, {"1.9", "1.10"}, {"file٢", "file10"},  // snippet: compare
             {"a", "B"}, {"a", "A"}, {"file10", "file10"},  // snippet: compare

@@ -1,7 +1,9 @@
 # Ordable
 
 Sorts strings in natural order, the way people expect: `file2` before
-`file10`, since runs of digits compare as numbers.
+`file10`, since runs of digits compare as numbers. (Not what Java and
+Kotlin call natural order, `naturalOrder()`, which for strings is plain
+code-unit order.)
 
 ## Examples
 
@@ -86,6 +88,12 @@ so a release that changes keys (a new Unicode version, say) will say so.
   leading zeros), so `file10`'s key is 8 code points.
 - **Before 1.0:** be sure we love the natural key format, since stored
   keys depend on it.
+- **Before 1.0, decide the name:** keep "natural", the usual name for
+  this order and what people search for, or switch to "human"
+  (`sortHuman`, `compareHuman`, `humanKey`) or "smart" (`sortSmart`,
+  `compareSmart`, `smartKey`), since in Java and Kotlin
+  "natural order" means a type's own `compareTo`, the plain order Ordable
+  replaces.
 
 ## Languages
 

@@ -6,6 +6,9 @@ comparing each run of decimal digits as a number, and everything else by
 code point. Digits in any script count, such as Arabic-Indic `٢` or
 fullwidth `２`.
 
+This isn't what Java and Kotlin call natural order (`naturalOrder()`),
+which for strings is the plain code-unit order this replaces.
+
 ## Comparing
 
 Each returns a negative number if `a` comes first, positive if `b` does, and
