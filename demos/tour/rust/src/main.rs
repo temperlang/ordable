@@ -3,7 +3,8 @@
 //! The same tour exists for each language Ordable supports, and they all
 //! print the same text. See ../README.md for how to run them.
 
-use ordable::{compare_natural, natural_key, sort_natural, sort_natural_by_key, Order};
+use ordable::builders::OrderBuilder;
+use ordable::{compare_natural, natural_key, sort_natural, sort_natural_by_key};
 use std::sync::Arc;
 
 /// Ordable takes lists of shared strings.
@@ -69,11 +70,11 @@ fn main() {
 
     section("3. Options");
 
-    // An Order has the same functions as methods, with options; None keeps
-    // an option's default.
-    let upper_first = Order::new(Some(true), None);  // snippet: options
+    // An Order has the same functions as methods, with options set through
+    // its builder: here uppercase first, then case-sensitive.
+    let upper_first = OrderBuilder {}.options().upper_first(true).build();  // snippet: options
     println!("uppercase first: {}", join(&upper_first.sort(files.clone())));  // snippet: options
-    let case_sensitive = Order::new(None, Some(true));  // snippet: options
+    let case_sensitive = OrderBuilder {}.options().case_sensitive(true).build();  // snippet: options
     println!("case-sensitive: {}", join(&case_sensitive.sort(files)));  // snippet: options
 
     section("4. Sorting your own types");

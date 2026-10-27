@@ -43,11 +43,11 @@ console.log(`key for file10: ${hex.join(" ")}`);  // snippet: keys
 
 section("3. Options");
 
-// An Order has the same functions as methods, with options: here
-// uppercase first, then case-sensitive.
-const upperFirst = new Order(true);  // snippet: options
+// An Order has the same functions as methods, with options named in an
+// object: here uppercase first, then case-sensitive.
+const upperFirst = Order.new({ upperFirst: true });  // snippet: options
 console.log(`uppercase first: ${upperFirst.sort(files).join(" ")}`);  // snippet: options
-const caseSensitive = new Order(false, true);  // snippet: options
+const caseSensitive = Order.new({ caseSensitive: true });  // snippet: options
 console.log(`case-sensitive: ${caseSensitive.sort(files).join(" ")}`);  // snippet: options
 
 section("4. Sorting your own types");

@@ -6,7 +6,7 @@
 import { Order, compareNatural, naturalKey, sortNatural, sortNaturalByKey } from "ordable";
 
 /** Case-sensitive natural order, for the switch. */
-const caseSensitiveOrder = new Order(false, true);
+const caseSensitiveOrder = Order.new({ caseSensitive: true });
 
 /**
  * A sample list, in a deliberately jumbled input order.
@@ -270,7 +270,7 @@ export function initSortOff() {
 
     // A break before the arguments, for narrow columns.
     $("ordable-sub").innerHTML = caseSensitive
-      ? "new Order({ caseSensitive: true })<wbr>.sort(list)"
+      ? "Order.new({ caseSensitive: true })<wbr>.sort(list)"
       : "sortNatural<wbr>(list)";
     $("intl-sub").textContent = caseSensitive ? "numeric: true (can't put case first)" : "numeric: true";
     $("input-order").textContent = input.map((row) => row.text).join(" · ");

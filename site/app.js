@@ -21,7 +21,7 @@ const files = ["img12.png", "img10.png", "IMG2.png", "img1.png"];
 console.log(sortNatural(files));
 
 // Options: case-sensitive puts every IMG before every img.
-const caseSensitive = new Order(false, true);
+const caseSensitive = Order.new({ caseSensitive: true });
 console.log(caseSensitive.sort(files));
 
 // Negative: the first comes first. 0 only for the same string.
