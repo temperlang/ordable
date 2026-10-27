@@ -3,20 +3,14 @@
 // The hero's before and after, and the sort-off: one list sorted three
 // ways, side by side, with natural keys for a chosen row.
 
-import {
-  compareNatural,
-  compareNaturalIgnoringCase,
-  naturalKey,
-  naturalKeyIgnoringCase,
-  sortNatural,
-  sortNaturalByKey,
-  sortNaturalByKeyIgnoringCase,
-} from "ordable";
+import { Order, compareNatural, naturalKey, sortNatural, sortNaturalByKey } from "ordable";
+
+/** Case-sensitive natural order, for the switch. */
+const caseSensitiveOrder = Order.new({ caseSensitive: true });
 
 /**
- * A sample list, in a deliberately jumbled input order. Some read best
- * ignoring case, which choosing them turns on.
- * @typedef {{ name: string, items: string[], ignoreCase?: boolean, note?: string, keys?: [string, string] }} Sample
+ * A sample list, in a deliberately jumbled input order.
+ * @typedef {{ name: string, items: string[], note?: string, keys?: [string, string] }} Sample
  *
  * `keys` is the pair the natural keys panel starts on: neighbors that show
  * the list's point in their keys, used when they're neighbors in Ordable's
@@ -25,8 +19,8 @@ import {
 
 /** @type {Sample[]} */
 const SAMPLES = [
-  // Mixed case, as from a camera and a download folder, so Ignore case
-  // visibly changes the first list.
+  // Mixed case, as from a camera and a download folder, so the
+  // Case-sensitive switch visibly changes the first list.
   { name: "Photos", items: ["IMG_10.jpg", "IMG_9.jpg", "img_100.jpg", "img_1.jpg", "IMG_20.jpg", "img_2.jpg", "IMG_11.jpg"],
     keys: ["IMG_9.jpg", "IMG_10.jpg"] },
   {
@@ -52,9 +46,8 @@ const SAMPLES = [
   {
     name: "Straße / Strasse",
     items: ["Straße", "Strassen", "STRASSE", "Strase", "Strasse", "Straßen"],
-    ignoreCase: true,
-    note: "Ignoring case, ß matches ss, as Unicode's case folding says.",
-    keys: ["Strasse", "Straße"],
+    note: "ß matches ss, as Unicode's case folding says, unless case-sensitive.",
+    keys: ["Strassen", "Straßen"],
   },
   { name: "Leading zeros", items: ["010", "2", "001", "1", "02", "10", "01", "3"], keys: ["1", "01"] },
 ];
@@ -181,31 +174,26 @@ function shuffled(rows) {
 }
 
 /**
- * Plain sorting compares UTF-16 code units, as `sort()` does; ignoring
- * case, it compares lowercased copies.
+ * The language's own sort, by code units, as `list.sort()` does.
  *
  * @param {Row[]} rows
- * @param {boolean} ignoreCase
  */
-function plainSort(rows, ignoreCase) {
-  const text = (/** @type {Row} */ r) => (ignoreCase ? r.text.toLowerCase() : r.text);
-  return [...rows].sort((a, b) => (text(a) < text(b) ? -1 : text(a) > text(b) ? 1 : 0));
+function plainSort(rows) {
+  return [...rows].sort((a, b) => (a.text < b.text ? -1 : a.text > b.text ? 1 : 0));
 }
 
-/** @param {boolean} ignoreCase */
-function collator(ignoreCase) {
-  // English, so everyone sees the same thing. Ignoring case means base
-  // sensitivity, which also ignores accents: Intl has no setting for case
-  // alone that still compares accents first.
-  return new Intl.Collator("en", { numeric: true, sensitivity: ignoreCase ? "base" : "variant" });
-}
+// English, so everyone sees the same thing. Its default sensitivity,
+// "variant", compares accents and then case only to break ties, as
+// Ordable does by default; it has no setting that puts case first.
+const intlCollator = new Intl.Collator("en", { numeric: true });
 
 export function initSortOff() {
   initHero();
 
   let sample = SAMPLES[0];
-  // On at first, as most people want; turning it off shows what case changes.
-  let ignoreCase = true;
+  // Off at first: case only breaks ties, as most people want. Turning it on
+  // shows what putting case first changes.
+  let caseSensitive = false;
   /** @type {Row[]} */
   let input = toRows(sample.items);
   /** @type {string | null} The chosen row's id, for the keys panel. */
@@ -241,11 +229,10 @@ export function initSortOff() {
   }
 
   function render() {
-    const plain = plainSort(input, ignoreCase);
-    const ordable = ignoreCase
-      ? sortNaturalByKeyIgnoringCase(input, (row) => row.text)
+    const plain = plainSort(input);
+    const ordable = caseSensitive
+      ? sortNaturalByKey(input, (row) => row.text, caseSensitiveOrder)
       : sortNaturalByKey(input, (row) => row.text);
-    const intlCollator = collator(ignoreCase);
     // A stable sort, so tied rows keep their input order.
     const intl = [...input].sort((a, b) => intlCollator.compare(a.text, b.text));
     ordableOrder = ordable;
@@ -281,10 +268,11 @@ export function initSortOff() {
     $("intl-stat").classList.toggle("warn", ties > 0);
     $("ordable-stat").textContent = "No ties, ever";
 
-    $("plain-sub").innerHTML = ignoreCase ? "<code>sort()</code>, lowercased" : "<code>list.sort()</code>";
-    // A break before the list, for narrow columns.
-    $("ordable-sub").innerHTML = ignoreCase ? "sortNaturalIgnoringCase<wbr>(list)" : "sortNatural<wbr>(list)";
-    $("intl-sub").textContent = ignoreCase ? "numeric, sensitivity: base" : "numeric: true";
+    // A break before the arguments, for narrow columns.
+    $("ordable-sub").innerHTML = caseSensitive
+      ? "Order.new({ caseSensitive: true })<wbr>.sort(list)"
+      : "sortNatural<wbr>(list)";
+    $("intl-sub").textContent = caseSensitive ? "numeric: true (can't put case first)" : "numeric: true";
     $("input-order").textContent = input.map((row) => row.text).join(" · ");
     showKeys();
   }
@@ -300,7 +288,6 @@ export function initSortOff() {
     chip.addEventListener("click", () => {
       sample = s;
       for (const c of chips.children) c.setAttribute("aria-pressed", String(c === chip));
-      if (s.ignoreCase !== undefined) setIgnoreCase(s.ignoreCase, false);
       setInput(s.items);
       $("shuffle-note").textContent = s.note ?? "";
     });
@@ -315,15 +302,13 @@ export function initSortOff() {
     render();
   }
 
-  // Ignore case.
-  const caseSwitch = $("ignore-case");
-  /** @param {boolean} on @param {boolean} [rerender] */
-  function setIgnoreCase(on, rerender = true) {
-    ignoreCase = on;
-    caseSwitch.setAttribute("aria-checked", String(on));
-    if (rerender) render();
-  }
-  caseSwitch.addEventListener("click", () => setIgnoreCase(!ignoreCase));
+  // Case-sensitive.
+  const caseSwitch = $("case-sensitive");
+  caseSwitch.addEventListener("click", () => {
+    caseSensitive = !caseSensitive;
+    caseSwitch.setAttribute("aria-checked", String(caseSensitive));
+    render();
+  });
 
   // Edit list: a textarea for people who want to type their own.
   const editBox = $("edit-box");
@@ -432,8 +417,10 @@ export function initSortOff() {
 
   function showKeys() {
     const rows = ordableOrder;
-    const keyOf = ignoreCase ? naturalKeyIgnoringCase : naturalKey;
-    const compare = ignoreCase ? compareNaturalIgnoringCase : compareNatural;
+    const keyOf = caseSensitive ? (/** @type {string} */ s) => caseSensitiveOrder.key(s) : naturalKey;
+    const compare = caseSensitive
+      ? (/** @type {string} */ a, /** @type {string} */ b) => caseSensitiveOrder.compare(a, b)
+      : compareNatural;
     // By default, the first neighbors that plain sorting would swap, as 9
     // and 10 are, so the keys show how numbers are written: best when
     // they differ only in their digits. Else the second row, so there's a
@@ -446,7 +433,7 @@ export function initSortOff() {
         [row.text, rows[k + 1].text].every((t) => t === x || t === y));
     }
     if (i < 0) {
-      const plainText = (/** @type {Row} */ row) => (ignoreCase ? row.text.toLowerCase() : row.text);
+      const plainText = (/** @type {Row} */ row) => row.text;
       const swapped = (/** @type {number} */ k) => k + 1 < rows.length && plainText(rows[k]) > plainText(rows[k + 1]);
       const letters = (/** @type {Row} */ row) => row.text.replace(/\p{Nd}/gu, "");
       i = rows.findIndex((row, k) => swapped(k) && letters(row) === letters(rows[k + 1]));
@@ -473,7 +460,7 @@ export function initSortOff() {
       const natural = compare(first.text, second.text) <= 0;
       $("key-check").textContent =
         `${plain ? "✓" : "✗"} key(${first.text}) ${plain ? "<" : ">"} key(${second.text}) by plain comparison, ` +
-        `just as ${ignoreCase ? "compareNaturalIgnoringCase" : "compareNatural"} puts ${first.text} ` +
+        `just as ${caseSensitive ? "the case-sensitive order" : "compareNatural"} puts ${first.text} ` +
         `${natural ? "first" : "second"}${differAt >= 0 ? ", deciding at the highlighted code points" : ""}.`;
     } else {
       $("key-check").textContent = "";

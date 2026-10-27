@@ -12,13 +12,17 @@ let names = ["img12.png", "img10.png", "img2.png", "img1.png"];
 sortNatural(names); // img1.png img2.png img10.png img12.png
 
 compareNatural("file2", "file10"); // Negative: file2 comes first
-compareNaturalIgnoringCase("a", "B"); // Negative: a comes first
+compareNatural("a", "B"); // Negative: case only breaks ties
 
 // Any items, by a string from each, such as files by name.
 sortNaturalByKey(files) { file => file.name };
 
 // A string that sorts naturally by plain comparison, as in a database.
 naturalKey("file10"); // Sorts after naturalKey("file2")
+
+// Options: an Order has the same functions as methods.
+let sensitive: Order = { caseSensitive: true };
+sensitive.sort(names); // Every IMG before every img, as plain sorting does
 ```
 
 Also: a [tour](demos/README.md) of the whole API in each language, with
@@ -30,15 +34,16 @@ browser, beside plain sorting and `Intl.Collator`.
 - Runs of decimal digits compare by value, at any length, without
   overflow. Digits in any script count (Unicode 15.0), such as Arabic-Indic
   `٢` or fullwidth `２`, and a run is all from one script.
-- Letters compare without their accents first, so `é` sorts with `e`, and
-  accents only break ties (`e` before `é`). Everything else compares by
-  code point.
-- When ignoring case, letters fold fully, so `É` matches `é`, `Σ`
-  matches `ς`, and `ß` matches `ss`.
+- Letters compare without their accents or case first, so `é` and `É`
+  sort with `e`, and letters fold fully, so `Σ` matches `ς` and `ß`
+  matches `ss`. Everything else compares by code point.
 - Two strings compare equal only if they're the same, so sorting gives one
   answer whatever the input order. Leading zeros (`1` before `01`), the
-  digits' script (`1` before `١`), accents (`e` before `é`) and, when
-  ignoring case, case (`A` before `a`) only break ties, in that order.
+  digits' script (`1` before `١`), accents (`e` before `é`), and case
+  (`a` before `A`) only break ties, in that order.
+- Options, in an `Order`: `upperFirst` (`A` before `a` in ties) and
+  `caseSensitive` (case counts as much as the letter, so every `B` comes
+  before every `a`).
 - No locale rules: that's for ICU or the platform.
 
 Ordable's Unicode tables (decimal digits, case folding as 202 compact
@@ -58,11 +63,15 @@ so Ordable stays below 1.0 until that's decided.
   for lists past a few items, and which Python can sort by and databases
   can `ORDER BY`.
 - **Done:** accents sort with their base letter (`e`, `é`, `f`), and `ß`
-  matches `ss` when ignoring case.
-- **Next:** the rest of the best defaults (whether to ignore case by
-  default; smarter punctuation, checked against real-world samples), and
-  options beside them in a `NaturalOrder` class: case, signed and
-  decimal numbers, and a strength for equality across equivalents.
+  matches `ss`.
+- **Done:** defaults as people expect, with case only breaking ties
+  (lowercase first), and an `Order` class for options (`upperFirst`,
+  `caseSensitive`).
+- **Next:** decomposed text (`e` plus a combining accent sorting as `é`);
+  smarter punctuation, checked against real-world samples; and more
+  options: signed and decimal numbers, a strength for equality across
+  equivalents, and a generic `sortByKey` method on `Order` once Temper's
+  C++ backend allows it.
 - **A spec:** the source as a readable specification of the default
   order and every option, with its tests beside it, and comparison
   tables so people can choose well.

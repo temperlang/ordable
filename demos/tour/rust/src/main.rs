@@ -3,10 +3,8 @@
 //! The same tour exists for each language Ordable supports, and they all
 //! print the same text. See ../README.md for how to run them.
 
-use ordable::{
-    compare_natural, compare_natural_ignoring_case, natural_key, sort_natural, sort_natural_by_key,
-    sort_natural_ignoring_case,
-};
+use ordable::builders::OrderBuilder;
+use ordable::{compare_natural, natural_key, sort_natural, sort_natural_by_key};
 use std::sync::Arc;
 
 /// Ordable takes lists of shared strings.
@@ -42,21 +40,19 @@ fn main() {
     section("1. Comparing");
 
     // Negative means the first comes first, positive the second, and 0 only
-    // for the same string.
-    for (a, b) in [("file2", "file10"), ("x01", "x1"), ("1.9", "1.10"), ("file٢", "file10"), ("a", "B"), ("file10", "file10")] {  // snippet: compare
+    // for the same string. Case only breaks ties, lowercase first.
+    let pairs = [  // snippet: compare
+        ("file2", "file10"), ("x01", "x1"), ("1.9", "1.10"), ("file٢", "file10"),  // snippet: compare
+        ("a", "B"), ("a", "A"), ("file10", "file10"),  // snippet: compare
+    ];  // snippet: compare
+    for (a, b) in pairs {  // snippet: compare
         println!("{a} vs {b}: {}", order(compare_natural(a, b)));  // snippet: compare
     }  // snippet: compare
 
-    // Ignoring case, letters compare as lowercase, and case only breaks ties.
-    for (a, b) in [("a", "B"), ("A", "a")] {
-        println!("{a} vs {b}, ignoring case: {}", order(compare_natural_ignoring_case(a, b)));
-    }
-
     section("2. Sorting strings");
 
-    let files = list(&["img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png"]);  // snippet: sort, ignore-case
+    let files = list(&["img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png"]);  // snippet: sort, options
     println!("files: {}", join(&sort_natural(files.clone())));  // snippet: sort
-    println!("ignoring case: {}", join(&sort_natural_ignoring_case(files)));  // snippet: ignore-case
 
     // Numbers of any length, and leading zeros only breaking ties.
     let versions = list(&["v1.10", "v2.0", "v1.9", "v10.1", "v1.2"]);  // snippet: numbers
@@ -72,7 +68,16 @@ fn main() {
     let hex: Vec<String> = natural_key("file10").chars().map(|c| format!("{:X}", c as u32)).collect();  // snippet: keys
     println!("key for file10: {}", hex.join(" "));  // snippet: keys
 
-    section("3. Sorting your own types");
+    section("3. Options");
+
+    // An Order has the same functions as methods, with options set through
+    // its builder: here uppercase first, then case-sensitive.
+    let upper_first = OrderBuilder {}.options().upper_first(true).build();  // snippet: options
+    println!("uppercase first: {}", join(&upper_first.sort(files.clone())));  // snippet: options
+    let case_sensitive = OrderBuilder {}.options().case_sensitive(true).build();  // snippet: options
+    println!("case-sensitive: {}", join(&case_sensitive.sort(files)));  // snippet: options
+
+    section("4. Sorting your own types");
 
     // sort_natural_by_key sorts any items by a string from each, made once
     // each.
@@ -81,7 +86,8 @@ fn main() {
         Track { title: "Track 1: Intro".into(), seconds: 61 },  // snippet: by-key
         Track { title: "Track 2: Rise".into(), seconds: 184 },  // snippet: by-key
     ];  // snippet: by-key
-    let by_title = sort_natural_by_key(tracks.clone(), Arc::new(|track: Track| Arc::new(track.title)));  // snippet: by-key
+    // None for the default order, since Rust has no default arguments.
+    let by_title = sort_natural_by_key(tracks.clone(), Arc::new(|track: Track| Arc::new(track.title)), None);  // snippet: by-key
     println!("tracks by title:");
     for track in by_title.iter() {
         println!("  {} ({} s)", track.title, track.seconds);

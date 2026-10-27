@@ -4,15 +4,14 @@
 // the same text. See ../README.md for how to run them.
 
 import static ordable.OrdableGlobal.compareNatural;
-import static ordable.OrdableGlobal.compareNaturalIgnoringCase;
 import static ordable.OrdableGlobal.naturalKey;
 import static ordable.OrdableGlobal.sortNatural;
 import static ordable.OrdableGlobal.sortNaturalByKey;
-import static ordable.OrdableGlobal.sortNaturalIgnoringCase;
 
 import java.util.Comparator;
 import java.util.List;
 import ordable.OrdableGlobal;
+import ordable.Order;
 
 public class Tour {
     static String order(int n) {
@@ -32,23 +31,19 @@ public class Tour {
         section("1. Comparing");
 
         // Negative means the first comes first, positive the second, and 0 only
-        // for the same string.
-        String[][] pairs = {{"file2", "file10"}, {"x01", "x1"}, {"1.9", "1.10"}, {"file٢", "file10"}, {"a", "B"}, {"file10", "file10"}};  // snippet: compare
+        // for the same string. Case only breaks ties, lowercase first.
+        String[][] pairs = {  // snippet: compare
+            {"file2", "file10"}, {"x01", "x1"}, {"1.9", "1.10"}, {"file٢", "file10"},  // snippet: compare
+            {"a", "B"}, {"a", "A"}, {"file10", "file10"},  // snippet: compare
+        };  // snippet: compare
         for (String[] p : pairs) {  // snippet: compare
             System.out.println(p[0] + " vs " + p[1] + ": " + order(compareNatural(p[0], p[1])));  // snippet: compare
         }  // snippet: compare
 
-        // Ignoring case, letters compare as lowercase, and case only breaks ties.
-        String[][] cased = {{"a", "B"}, {"A", "a"}};
-        for (String[] p : cased) {
-            System.out.println(p[0] + " vs " + p[1] + ", ignoring case: " + order(compareNaturalIgnoringCase(p[0], p[1])));
-        }
-
         section("2. Sorting strings");
 
-        List<String> files = List.of("img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png");  // snippet: sort, ignore-case
+        List<String> files = List.of("img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png");  // snippet: sort, options
         System.out.println("files: " + String.join(" ", sortNatural(files)));  // snippet: sort
-        System.out.println("ignoring case: " + String.join(" ", sortNaturalIgnoringCase(files)));  // snippet: ignore-case
 
         // Numbers of any length, and leading zeros only breaking ties.
         List<String> versions = List.of("v1.10", "v2.0", "v1.9", "v10.1", "v1.2");  // snippet: numbers
@@ -66,7 +61,16 @@ public class Tour {
             .collect(java.util.stream.Collectors.joining(" "));  // snippet: keys
         System.out.println("key for file10: " + hex);  // snippet: keys
 
-        section("3. Sorting your own types");
+        section("3. Options");
+
+        // An Order has the same functions as methods, with options, set
+        // through its builder: here uppercase first, then case-sensitive.
+        Order upperFirst = new Order.Builder().upperFirst(true).build();  // snippet: options
+        System.out.println("uppercase first: " + String.join(" ", upperFirst.sort(files)));  // snippet: options
+        Order caseSensitive = new Order.Builder().caseSensitive(true).build();  // snippet: options
+        System.out.println("case-sensitive: " + String.join(" ", caseSensitive.sort(files)));  // snippet: options
+
+        section("4. Sorting your own types");
 
         // sortNaturalByKey sorts any items by a string from each, made once each.
         List<Track> tracks = List.of(new Track("Track 10: Outro", 95), new Track("Track 1: Intro", 61), new Track("Track 2: Rise", 184));  // snippet: by-key

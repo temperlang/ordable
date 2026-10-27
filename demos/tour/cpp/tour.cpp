@@ -12,12 +12,11 @@
 
 #include "ordable/init.hpp"
 
+using ordable::Order;
 using ordable::compareNatural;
-using ordable::compareNaturalIgnoringCase;
 using ordable::naturalKey;
 using ordable::sortNatural;
 using ordable::sortNaturalByKey;
-using ordable::sortNaturalIgnoringCase;
 
 // Ordable takes lists as shared vectors.
 std::shared_ptr<std::vector<std::string>> list(std::initializer_list<std::string> values) {
@@ -50,26 +49,18 @@ int main() {
   section("1. Comparing");
 
   // Negative means the first comes first, positive the second, and 0 only for
-  // the same string.
+  // the same string. Case only breaks ties, lowercase first.
   std::vector<std::pair<std::string, std::string>> pairs = {  // snippet: compare
-      {"file2", "file10"}, {"x01", "x1"}, {"1.9", "1.10"},  // snippet: compare
-      {"file٢", "file10"}, {"a", "B"}, {"file10", "file10"}};  // snippet: compare
+      {"file2", "file10"}, {"x01", "x1"}, {"1.9", "1.10"}, {"file٢", "file10"},  // snippet: compare
+      {"a", "B"}, {"a", "A"}, {"file10", "file10"}};  // snippet: compare
   for (auto const &p : pairs) {  // snippet: compare
     std::cout << p.first << " vs " << p.second << ": " << order(compareNatural(p.first, p.second)) << "\n";  // snippet: compare
   }  // snippet: compare
 
-  // Ignoring case, letters compare as lowercase, and case only breaks ties.
-  std::vector<std::pair<std::string, std::string>> cased = {{"a", "B"}, {"A", "a"}};
-  for (auto const &p : cased) {
-    std::cout << p.first << " vs " << p.second << ", ignoring case: "
-              << order(compareNaturalIgnoringCase(p.first, p.second)) << "\n";
-  }
-
   section("2. Sorting strings");
 
-  auto files = list({"img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png"});  // snippet: sort, ignore-case
+  auto files = list({"img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png"});  // snippet: sort, options
   std::cout << "files: " << join(*sortNatural(files)) << "\n";  // snippet: sort
-  std::cout << "ignoring case: " << join(*sortNaturalIgnoringCase(files)) << "\n";  // snippet: ignore-case
 
   // Numbers of any length, and leading zeros only breaking ties.
   auto versions = list({"v1.10", "v2.0", "v1.9", "v10.1", "v1.2"});  // snippet: numbers
@@ -89,7 +80,16 @@ int main() {
   }  // snippet: keys
   std::cout << "\n";  // snippet: keys
 
-  section("3. Sorting your own types");
+  section("3. Options");
+
+  // An Order has the same functions as methods, with options: here
+  // uppercase first, then case-sensitive.
+  auto upperFirst = Order::make(true);  // snippet: options
+  std::cout << "uppercase first: " << join(*upperFirst->sort(files)) << "\n";  // snippet: options
+  auto caseSensitive = Order::make(false, true);  // snippet: options
+  std::cout << "case-sensitive: " << join(*caseSensitive->sort(files)) << "\n";  // snippet: options
+
+  section("4. Sorting your own types");
 
   // sortNaturalByKey sorts any items by a string from each, made once each.
   auto tracks = std::make_shared<std::vector<Track>>(  // snippet: by-key

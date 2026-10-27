@@ -8,12 +8,11 @@ from dataclasses import dataclass
 from functools import cmp_to_key
 
 from ordable import (
+    Order,
     compare_natural,
-    compare_natural_ignoring_case,
     natural_key,
     sort_natural,
     sort_natural_by_key,
-    sort_natural_ignoring_case,
 )
 
 
@@ -32,18 +31,15 @@ section("1. Comparing")
 
 # Negative means the first comes first, positive the second, and 0 only for
 # the same string.
-for a, b in [("file2", "file10"), ("x01", "x1"), ("1.9", "1.10"), ("file٢", "file10"), ("a", "B"), ("file10", "file10")]:  # snippet: compare
+# Case only breaks ties, lowercase first.
+pairs = [("file2", "file10"), ("x01", "x1"), ("1.9", "1.10"), ("file٢", "file10"), ("a", "B"), ("a", "A"), ("file10", "file10")]  # snippet: compare
+for a, b in pairs:  # snippet: compare
     print(f"{a} vs {b}: {order(compare_natural(a, b))}")  # snippet: compare
-
-# Ignoring case, letters compare as lowercase, and case only breaks ties.
-for a, b in [("a", "B"), ("A", "a")]:
-    print(f"{a} vs {b}, ignoring case: {order(compare_natural_ignoring_case(a, b))}")
 
 section("2. Sorting strings")
 
-files = ["img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png"]  # snippet: sort, ignore-case
+files = ["img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png"]  # snippet: sort, options
 print(f"files: {' '.join(sort_natural(files))}")  # snippet: sort
-print(f"ignoring case: {' '.join(sort_natural_ignoring_case(files))}")  # snippet: ignore-case
 
 # Numbers of any length, and leading zeros only breaking ties.
 versions = ["v1.10", "v2.0", "v1.9", "v10.1", "v1.2"]  # snippet: numbers
@@ -57,7 +53,15 @@ print(f"natural keys, file2 before file10: {'yes' if natural_key('file2') < natu
 # Keys are the same in every language, so they can be stored and shared.
 print(f"key for file10: {' '.join(f'{ord(c):X}' for c in natural_key('file10'))}")  # snippet: keys
 
-section("3. Sorting your own types")
+section("3. Options")
+
+# An Order has the same functions as methods, with options.
+upper_first = Order(upper_first=True)  # snippet: options
+print(f"uppercase first: {' '.join(upper_first.sort(files))}")  # snippet: options
+case_sensitive = Order(case_sensitive=True)  # snippet: options
+print(f"case-sensitive: {' '.join(case_sensitive.sort(files))}")  # snippet: options
+
+section("4. Sorting your own types")
 
 
 @dataclass

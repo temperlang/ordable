@@ -5,21 +5,23 @@ file2 vs file10: before
 x01 vs x1: after
 1.9 vs 1.10: before
 file٢ vs file10: before
-a vs B: after
+a vs B: before
+a vs A: before
 file10 vs file10: same
-a vs B, ignoring case: before
-A vs a, ignoring case: before
 
 ## 2. Sorting strings
-files: IMG2.png img1.png img2.png img10.png img12.png
-ignoring case: img1.png IMG2.png img2.png img10.png img12.png
+files: img1.png img2.png IMG2.png img10.png img12.png
 versions: v1.2 v1.9 v1.10 v2.0 v10.1
 big numbers: n9 n99999999999999999999 n123456789012345678901234567890
 leading zeros: 1 01 001 2
 natural keys, file2 before file10: yes
-key for file10: 69 6C 6F 68 35 34 33 1 33 1 33 1 69 6C 6F 68
+key for file10: 41 69 6C 6F 68 35 34 33 1 33 1 33 1 69 6C 6F 68 1 3 3 3 3 1 69 6C 6F 68
 
-## 3. Sorting your own types
+## 3. Options
+uppercase first: img1.png IMG2.png img2.png img10.png img12.png
+case-sensitive: IMG2.png img1.png img2.png img10.png img12.png
+
+## 4. Sorting your own types
 tracks by title:
   Track 1: Intro (61 s)
   Track 2: Rise (184 s)
