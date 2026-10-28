@@ -82,5 +82,7 @@ foreach (var track in byTitle)
 // Or sort with the language's own tools, using CompareSmart to compare.
 var own = tracks.OrderBy(track => track.Title, Comparer<string>.Create(CompareSmart));
 Console.WriteLine($"with the language's own sort: {string.Join(", ", own.Select(track => track.Title))}");
+var byMethod = new Order(upperFirst: true).SortByKey(tracks, track => track.Title);  // snippet: by-key
+Console.WriteLine($"with an Order's method: {string.Join(", ", byMethod.Select(track => track.Title))}");
 
 record Track(string Title, int Seconds);

@@ -99,5 +99,7 @@ public class Tour {
             .map(Track::title)
             .toList();
         System.out.println("with the language's own sort: " + String.join(", ", own));
+        List<Track> byMethod = new Order.Builder().upperFirst(true).build().sortByKey(tracks, Track::title);  // snippet: by-key
+        System.out.println("with an Order's method: " + String.join(", ", byMethod.stream().map(Track::title).toList()));
     }
 }

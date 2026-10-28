@@ -91,3 +91,5 @@ for track in by_title:
 # Python sorts by key, so cmp_to_key adapts the comparison.
 own = sorted(tracks, key=cmp_to_key(lambda a, b: compare_smart(a.title, b.title)))
 print(f"with the language's own sort: {', '.join(track.title for track in own)}")
+by_method = Order(upper_first=True).sort_by_key(tracks, lambda track: track.title)  # snippet: by-key
+print(f"with an Order's method: {', '.join(track.title for track in by_method)}")

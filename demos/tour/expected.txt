@@ -15,7 +15,7 @@ versions: v1.2 v1.9 v1.10 v2.0 v10.1
 big numbers: n9 n99999999999999999999 n123456789012345678901234567890
 leading zeros: 1 01 001 2
 smart keys, file2 before file10: yes
-key for file10: 41 69 6C 6F 68 35 34 33
+key for file10: 6F 30 69 6C 6F 68 35 34 33
 
 ## 3. Options
 uppercase first: img1.png IMG2.png img2.png img10.png img12.png
@@ -30,3 +30,4 @@ tracks by title:
   Track 2: Rise (184 s)
   Track 10: Outro (95 s)
 with the language's own sort: Track 1: Intro, Track 2: Rise, Track 10: Outro
+with an Order's method: Track 1: Intro, Track 2: Rise, Track 10: Outro

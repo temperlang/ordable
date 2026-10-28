@@ -119,5 +119,11 @@ int main() {
     titles.push_back(track.title);
   }
   std::cout << "with the language's own sort: " << join(titles, ", ") << "\n";
+  auto byMethod = Order::make(Casing::last, true)->sortByKey<Track>(tracks, [](Track const &track) { return track.title; });  // snippet: by-key
+  std::vector<std::string> methodTitles;
+  for (auto const &track : *byMethod) {
+    methodTitles.push_back(track.title);
+  }
+  std::cout << "with an Order's method: " << join(methodTitles, ", ") << "\n";
   return 0;
 }

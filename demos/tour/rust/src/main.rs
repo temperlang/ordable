@@ -108,4 +108,7 @@ fn main() {
     own.sort_by(|a, b| compare_smart(a.title.as_str(), b.title.as_str()).cmp(&0));
     let titles: Vec<&str> = own.iter().map(|track| track.title.as_str()).collect();
     println!("with the language's own sort: {}", titles.join(", "));
+    let by_method = OrderBuilder {}.options().upper_first(true).build().sort_by_key(own.clone(), Arc::new(|track: Track| Arc::new(track.title)));  // snippet: by-key
+    let method_titles: Vec<String> = by_method.iter().map(|track| track.title.clone()).collect();
+    println!("with an Order's method: {}", method_titles.join(", "));
 }

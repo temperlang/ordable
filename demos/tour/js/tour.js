@@ -76,3 +76,5 @@ for (const track of byTitle) {
 // Or sort with the language's own tools, using compareSmart to compare.
 const own = tracks.toSorted((a, b) => compareSmart(a.title, b.title));
 console.log(`with the language's own sort: ${own.map((track) => track.title).join(", ")}`);
+const byMethod = Order.new({ upperFirst: true }).sortByKey(tracks, (track) => track.title);  // snippet: by-key
+console.log(`with an Order's method: ${byMethod.map((track) => track.title).join(", ")}`);

@@ -91,3 +91,9 @@ table.sort(own, function(a, b) return compareSmart(a.title, b.title) < 0 end)
 local titles = {}
 for _, track in ipairs(own) do titles[#titles + 1] = track.title end
 print("with the language's own sort: " .. table.concat(titles, ", "))
+local byMethod = Order(Casing.last, true):sortByKey(tracks, function(track) return track.title end)  -- snippet: by-key
+local methodTitles = {}
+for _, track in ipairs(byMethod) do
+  methodTitles[#methodTitles + 1] = track.title
+end
+print("with an Order's method: " .. table.concat(methodTitles, ", "))

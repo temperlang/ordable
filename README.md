@@ -63,6 +63,29 @@ against Python's Unicode data for every code point, pinned to Unicode
 into Temper later without changing its API. Smart keys depend on them,
 so a release that changes keys (a new Unicode version, say) will say so.
 
+## Storing keys
+
+A smart key (`smartKey`, or `key` on an `Order`) sorts by plain
+comparison exactly as its string sorts in smart order, so it can be
+stored and sorted anywhere, such as a database column with `ORDER BY`:
+
+- **Compare keys as plain code points.** In a database, give the column
+  a binary collation: `COLLATE "C"` in PostgreSQL, a binary collation
+  such as `utf8mb4_bin` in MySQL, or SQLite's default. A
+  language-aware or case-insensitive collation would reorder keys.
+- **Keys contain control characters,** such as U+0001 between levels, so
+  they're not for XML 1.0, which forbids them, nor for showing to
+  people. They stay below U+D800 and never contain U+0000, so UTF-8,
+  UTF-16, and code points all order them alike.
+- **Keys say what made them.** Each starts with `o`, for this key
+  format, and then a code point for the options that made it, so keys
+  from other options or another format are easy to spot. Compare only
+  keys made the same way.
+- **Keys don't change by accident:** every backend's tests check a
+  frozen set of exact keys ([key vectors](src/key-vectors.temper.md)).
+  A change to keys would come with a new format code point and a new
+  major version.
+
 ## Roadmap
 
 - **Done:** smart order with numbers of any length, a total order,
@@ -101,8 +124,9 @@ so a release that changes keys (a new Unicode version, say) will say so.
   [src/properties.temper.md](src/properties.temper.md) keeps them quick;
   raise it for a long run or a benchmark. Later, property testing and
   benchmarks across backends could be built into Temper itself.
-- **Before 1.0:** be sure we love the smart key format, since stored
-  keys depend on it.
+- **Done:** a key format to keep: a header naming the format and the
+  options, frozen key vectors checked on every backend, and notes on
+  storing keys.
 - **Done:** named it "smart" (`sortSmart`, `compareSmart`, `smartKey`):
   what's usually called natural sorting, since in Java and Kotlin
   "natural order" means a type's own `compareTo`, the plain order Ordable
