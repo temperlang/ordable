@@ -214,7 +214,7 @@ with code points far past the separator's shift.
     ): Void {
       let gen = new Strings(2);
       let builder = new ListBuilder<String>();
-      for (var i = 0; i < 200; i += 1) {
+      for (var i = 0; i < generatedCount; i += 1) {
         builder.add(gen.next(6));
       }
       builder.add("\u{D7FB}");

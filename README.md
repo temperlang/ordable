@@ -93,6 +93,11 @@ so a release that changes keys (a new Unicode version, say) will say so.
 - **Done:** compact natural keys, usually about as long as their string:
   levels after the first only record what's unusual (accents, uppercase,
   leading zeros), so `file10`'s key is 8 code points.
+- **Quick tests, long runs on demand:** the property tests compare every
+  pair of generated strings, so `generatedCount` in
+  [src/properties.temper.md](src/properties.temper.md) keeps them quick;
+  raise it for a long run or a benchmark. Later, property testing and
+  benchmarks across backends could be built into Temper itself.
 - **Before 1.0:** be sure we love the natural key format, since stored
   keys depend on it.
 - **Before 1.0, decide the name:** keep "natural", the usual name for
