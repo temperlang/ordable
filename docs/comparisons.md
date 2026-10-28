@@ -57,6 +57,10 @@ case folding, and case as a tiebreak. `sortSmart` makes each string's
 smart sort key once and then sorts by plain string comparison;
 comparing with `compareSmart` directly is shown too.
 
+Since these were measured, keys have gained a two-code-point
+header, and combining marks are composed when comparing; the numbers
+haven't been measured again, so rerun them before quoting them.
+
 | Language | Ordable `sortSmart` | Ordable comparator | Others |
 |---|---|---|---|
 | Python | 1.7 s | not measured | `natsort` 0.12 s as a sort key |

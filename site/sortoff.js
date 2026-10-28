@@ -3,7 +3,7 @@
 // The hero's before and after, and the sort-off: one list sorted three
 // ways, side by side, with smart keys for a chosen row.
 
-import { Casing, Order, sortSmart, sortSmartByKey } from "ordable";
+import { Casing, Order, sortSmart } from "ordable";
 
 /** How much case counts, from least to most: `Casing`'s values, by name. */
 const CASINGS = ["ignored", "last", "first"];
@@ -272,7 +272,7 @@ export function initSortOff() {
 
   function render() {
     const plain = plainSort(input);
-    const ordable = sortSmartByKey(input, (row) => row.text, order);
+    const ordable = order.sortByKey(input, (row) => row.text);
     // A stable sort, so tied rows keep their input order.
     const intl = [...input].sort((a, b) => intlCollator.compare(a.text, b.text));
     ordableOrder = ordable;

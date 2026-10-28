@@ -37,17 +37,17 @@ order that only matters for equal strings.
 A sorted copy of any items, in the smart order of a string from each,
 such as files by name: `sortSmartByKey(files) { file => file.name }`.
 Each key is made once, not once per comparison, so `key` can do some work.
-Items with the same key keep their order. An `order` with
-[options](#options) changes the order.
+Items with the same key keep their order. For [options](#options), an
+`Order`'s `sortByKey` method does the same.
 
-    export let sortSmartByKey<T>(items: List<T>, key: fn (T): String, order: Order = smart): List<T> {
-      order.sortByKey(items, key)
+    export let sortSmartByKey<T>(items: List<T>, key: fn (T): String): List<T> {
+      smart.sortByKey(items, key)
     }
 
 ## Options
 
 An `Order` is smart order with options, with `compare`, `sort`,
-`sortByKey`, and `key` as methods, and `sortSmartByKey` takes one too.
+`sortByKey`, and `key` as methods.
 Every option has a default, so an object literal names only what
 changes, such as `{ upperFirst: true }`.
 
@@ -735,11 +735,8 @@ Past any combining marks at `start`.
       };
       assert(calls == 4);
       assert(titles.join(", ") { t => t.title } == "Track 1: Intro, track 2: Rise, Track 2: Rise again, Track 10: Outro");
-      let firstCased = sortSmartByKey(tracks, fn (track: Track): String { track.title }, firstUpperOrder);
+      let firstCased = firstUpperOrder.sortByKey(tracks) { track => track.title };
       assert(firstCased.join(", ") { t => t.title } == "Track 1: Intro, Track 2: Rise again, Track 10: Outro, track 2: Rise");
-      // The same as a method of an order, with a trailing block.
-      let byMethod = firstUpperOrder.sortByKey(tracks) { track => track.title };
-      assert(byMethod.join(", ") { t => t.title } == firstCased.join(", ") { t => t.title });
     }
 
 Equal keys keep their order.

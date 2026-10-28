@@ -62,7 +62,7 @@ const SPOTS = [
   {
     id: "by-key",
     title: "Sorting your own types",
-    about: "`sortSmartByKey` sorts any items by a string from each. This column sorts its rows by their text this way.",
+    about: "`sortSmartByKey` sorts any items by a string from each, and an `Order`'s `sortByKey` does the same with its options. This column sorts its rows by their text with `order.sortByKey`.",
     target: () => find("#rows-ordable"),
   },
   {
