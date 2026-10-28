@@ -43,7 +43,12 @@ U+0001, which is below every other code point used:
 5. **Case:** for each character other than a digit, 0 or 1, whichever
    case comes first being 0.
 6. **Code points:** for each character other than a digit, 0, or itself
-   if it's an odd form like the Kelvin sign.
+   if it's an odd form like the Kelvin sign, or 1 if it's written with
+   combining marks (unless accents are ignored).
+
+A letter's combining marks add nothing to the first level, compose with
+it for the later levels as `compareMarks` reads them, and each mark that
+doesn't compose is an entry of its own in the later levels.
 
 A level an option ignores is left empty (the case level with
 `Casing.first`, which has case in the first level, and the leading zeros
@@ -122,16 +127,28 @@ keeps them in order too.
           lead = leadWeight(c, first, order);
           appendCodePoint(main, firstUnit(c) + lead);
           rest = foldRest(c);
-          if (c < 0x80) {
+          // The marks after `c` that compose with it, as `compareMarks` reads them.
+          var composed = c;
+          var decomposed = false;
+          while (s.hasIndex(i) && isMark(s[i])) {
+            let next = compose(composed, s[i]);
+            if (next < 0) {
+              break;
+            }
+            composed = next;
+            decomposed = true;
+            i = s.next(i);
+          }
+          if (composed < 0x80) {
             // ASCII has no accents or odd forms, so only case can say anything.
             marksHeld += 1;
             codesHeld += 1;
           } else {
             if (marked) {
-              marksHeld = addWeight(marks, marksHeld, markWeight(c));
+              marksHeld = addWeight(marks, marksHeld, markWeight(composed));
             }
             if (coded) {
-              codesHeld = addWeight(codes, codesHeld, codeWeight(c));
+              codesHeld = addWeight(codes, codesHeld, codeWeight(c, decomposed && marked));
             }
           }
           if (cased) {
@@ -141,6 +158,17 @@ keeps them in order too.
             } else {
               casesHeld = addWeight(cases, casesHeld, caseOf);
             }
+          }
+          // Marks that don't compose are entries of their own after the
+          // first level: their accent weight is themselves, and they have no
+          // case or odd form.
+          while (s.hasIndex(i) && isMark(s[i])) {
+            if (marked) {
+              marksHeld = addWeight(marks, marksHeld, s[i]);
+            }
+            casesHeld += 1;
+            codesHeld += 1;
+            i = s.next(i);
           }
         }
       }

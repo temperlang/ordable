@@ -115,6 +115,58 @@ case but isn't the usual one, as the Kelvin sign `K` beside `K`.
       c >= 0xB5 && findEntry(oddCases, 1, c) >= 0
     }
 
+## Combining Marks
+
+Whether `c` is a combining mark (general category Mn), such as U+0301,
+the acute accent, which text can carry after a letter instead of using
+one precomposed code point, as `e` and U+0301 for `é`. Marks start at
+U+0300, so most text never reaches the table.
+
+    let isMark(c: Int): Boolean {
+      if (c < 0x300) {
+        return false;
+      }
+      // Runs are two numbers each: start and count.
+      var low = 0;
+      var high = markRuns.length / 2;
+      while (high - low > 1) {
+        let middle = (low + high) / 2;
+        if (markRuns[middle * 2] <= c) {
+          low = middle;
+        } else {
+          high = middle;
+        }
+      }
+      let start = markRuns[low * 2];
+      c >= start && c < start + markRuns[low * 2 + 1]
+    }
+
+The one code point that `base` and the combining mark `mark` make, as NFC
+composes them, or -1 if they make none, as `q` and U+0301.
+
+    let compose(base: Int, mark: Int): Int {
+      // Entries are three numbers each: base, mark, and composed, sorted
+      // by base and then mark; find the first for `base`, then its marks.
+      var low = 0;
+      var high = compositions.length / 3;
+      while (low < high) {
+        let middle = (low + high) / 2;
+        if (compositions[middle * 3] < base) {
+          low = middle + 1;
+        } else {
+          high = middle;
+        }
+      }
+      var at = low * 3;
+      while (at < compositions.length && compositions[at] == base) {
+        if (compositions[at + 1] == mark) {
+          return compositions[at + 2];
+        }
+        at += 3;
+      }
+      -1
+    }
+
 The start of the entry for `c` in a sorted table of `width` numbers per
 entry, the first being its key, or -1 if there's none.
 
