@@ -95,8 +95,7 @@ fn main() {
         Track { title: "Track 1: Intro".into(), seconds: 61 },  // snippet: by-key
         Track { title: "Track 2: Rise".into(), seconds: 184 },  // snippet: by-key
     ];  // snippet: by-key
-    // None for the default order, since Rust has no default arguments.
-    let by_title = sort_smart_by_key(tracks.clone(), Arc::new(|track: Track| Arc::new(track.title)), None);  // snippet: by-key
+    let by_title = sort_smart_by_key(tracks.clone(), Arc::new(|track: Track| Arc::new(track.title)));  // snippet: by-key
     println!("tracks by title:");
     for track in by_title.iter() {
         println!("  {} ({} s)", track.title, track.seconds);
