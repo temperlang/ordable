@@ -65,6 +65,10 @@ print("case first: " .. table.concat(caseFirst:sort(files), " "))  -- snippet: o
 local loose = Order(Casing.ignored, false, true)  -- snippet: equal
 print("ignoring accents and case, Café vs CAFE: " .. order(loose:compare("Café", "CAFE")))  -- snippet: equal
 print("same key: " .. (loose:key("Café") == loose:key("CAFE") and "yes" or "no"))  -- snippet: equal
+-- Or compare numbers by value alone, whatever their leading zeros or
+-- digit script.
+local byValue = Order(Casing.last, false, false, true)  -- snippet: equal
+print("ignoring number forms, file01 vs file1: " .. order(byValue:compare("file01", "file1")))  -- snippet: equal
 
 section("4. Sorting your own types")
 

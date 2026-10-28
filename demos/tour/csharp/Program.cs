@@ -63,6 +63,10 @@ Console.WriteLine($"case first: {string.Join(" ", caseFirst.Sort(files))}");  //
 var loose = new Order(casing: Casing.Ignored, ignoreAccents: true);  // snippet: equal
 Console.WriteLine($"ignoring accents and case, Café vs CAFE: {Relation(loose.Compare("Café", "CAFE"))}");  // snippet: equal
 Console.WriteLine($"same key: {(loose.Key("Café") == loose.Key("CAFE") ? "yes" : "no")}");  // snippet: equal
+// Or compare numbers by value alone, whatever their leading zeros or
+// digit script.
+var byValue = new Order(ignoreNumberForms: true);  // snippet: equal
+Console.WriteLine($"ignoring number forms, file01 vs file1: {Relation(byValue.Compare("file01", "file1"))}");  // snippet: equal
 
 Section("4. Sorting your own types");
 

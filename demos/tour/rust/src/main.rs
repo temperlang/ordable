@@ -81,6 +81,10 @@ fn main() {
     let loose = OrderBuilder {}.options().casing(Casing::ignored()).ignore_accents(true).build();  // snippet: equal
     println!("ignoring accents and case, Café vs CAFE: {}", order(loose.compare("Café", "CAFE")));  // snippet: equal
     println!("same key: {}", if loose.key("Café") == loose.key("CAFE") { "yes" } else { "no" });  // snippet: equal
+    // Or compare numbers by value alone, whatever their leading zeros or
+    // digit script.
+    let by_value = OrderBuilder {}.options().ignore_number_forms(true).build();  // snippet: equal
+    println!("ignoring number forms, file01 vs file1: {}", order(by_value.compare("file01", "file1")));  // snippet: equal
 
     section("4. Sorting your own types");
 

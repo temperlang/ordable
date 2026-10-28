@@ -12,11 +12,12 @@ const CASINGS = ["ignored", "last", "first"];
 const SWITCHES = [
   ["upperFirst", "Uppercase first"],
   ["ignoreAccents", "Ignore accents"],
+  ["ignoreNumberForms", "Ignore number forms"],
 ];
 
 /**
  * The options chosen: `casing` by name, and the switches.
- * @typedef {{ casing: string, upperFirst?: boolean, ignoreAccents?: boolean }} Options
+ * @typedef {{ casing: string, upperFirst?: boolean, ignoreAccents?: boolean, ignoreNumberForms?: boolean }} Options
  */
 
 /**
@@ -197,7 +198,9 @@ function plainSort(rows) {
  * The closest Intl.Collator to Ordable's options, in English, so everyone
  * sees the same thing. Its default sensitivity, "variant", compares
  * accents and then case only to break ties, as Ordable does by default;
- * it has no setting that puts case first.
+ * it has no setting that puts case first. Its `numeric` option already
+ * makes numbers equal by value, whatever their leading zeros or digit
+ * script, as `ignoreNumberForms` does.
  *
  * @param {Options} options
  */
@@ -288,7 +291,7 @@ export function initSortOff() {
     $("plain-stat").classList.toggle("bad", off > 0);
 
     const ordableTies = markTies("ordable", ordable, (a, b) => order.compare(a, b));
-    const ignoring = options.ignoreAccents || options.casing === "ignored";
+    const ignoring = options.ignoreAccents || options.ignoreNumberForms || options.casing === "ignored";
     $("ordable-stat").textContent = ordableTies
       ? `${ordableTies} rows equal, as asked`
       : ignoring ? "No ties in this list" : "No ties, ever";

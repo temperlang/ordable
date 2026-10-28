@@ -77,12 +77,12 @@ so a release that changes keys (a new Unicode version, say) will say so.
   (lowercase first), and an `Order` class for options (`casing` and
   `upperFirst`).
 - **Done:** options that let different strings compare equal
-  (`ignoreAccents` and `Casing.ignored`), with matching keys.
+  (`ignoreAccents`, `Casing.ignored`, and `ignoreNumberForms`, which
+  makes `01`, `1`, and `١` equal, as `Intl.Collator`'s numeric option
+  does), with matching keys.
 - **Next:** decomposed text (`e` plus a combining accent sorting as `é`);
   smarter punctuation, checked against real-world samples; and more
-  options: signed and decimal numbers; an option to make equivalent
-  numbers equal (ignoring leading zeros and digit scripts, so `01`,
-  `1`, and `١` tie), for matching `Intl.Collator`; and a generic
+  options: signed and decimal numbers; and a generic
   `sortByKey` method on `Order` once Temper's C++ backend allows it.
 - **A spec:** the source as a readable specification of the default
   order and every option, with its tests beside it, and comparison

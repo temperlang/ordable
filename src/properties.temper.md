@@ -113,4 +113,5 @@ and sorting gives one answer up to equal strings.
       checkOrder(test, false) { a, b => accentlessOrder.compare(a, b) };
       checkOrder(test, false) { a, b => caselessOrder.compare(a, b) };
       checkOrder(test, false) { a, b => baseOrder.compare(a, b) };
+      checkOrder(test, false) { a, b => formlessOrder.compare(a, b) };
     }
