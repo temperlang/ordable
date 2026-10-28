@@ -7,7 +7,7 @@
 
 The data is Python's (`unicodedata`), which must be Unicode
 `UNICODE_VERSION`, so tables don't change by accident with the Python
-version. Stored natural keys depend on these tables, so moving to a new
+version. Stored smart keys depend on these tables, so moving to a new
 Unicode version (raise `UNICODE_VERSION`, then run with a Python that
 has it) can change some keys, and a release that does says so.
 """

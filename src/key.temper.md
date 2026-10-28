@@ -1,10 +1,10 @@
-# Natural Sort Keys
+# Smart Sort Keys
 
-A natural sort key is a string that sorts, by plain comparison of code
-points, exactly as its source string sorts naturally:
-`compareNatural(a, b)` and `naturalKey(a) <=> naturalKey(b)` always have
+A smart sort key is a string that sorts, by plain comparison of code
+points, exactly as its source string sorts in smart order:
+`compareSmart(a, b)` and `smartKey(a) <=> smartKey(b)` always have
 the same sign, and so do an `Order`'s `compare` and `key`. Keys are made once per string, so sorting by them avoids
-redoing the natural comparison for every pair, and they can be stored
+redoing the smart comparison for every pair, and they can be stored
 and sorted anywhere that compares strings, such as a database column
 with `ORDER BY`.
 
@@ -20,7 +20,7 @@ changing the layout would misorder them, so any change needs a new major
 version, or a new function beside these. The tour prints one, which
 checks that every language agrees.
 
-    export let naturalKey(s: String): String { natural.key(s) }
+    export let smartKey(s: String): String { smart.key(s) }
 
 ## Layout
 
@@ -29,7 +29,7 @@ different options never pass for each other: `A` for the default, then
 plus 1 for `upperFirst` (unless case is ignored), plus 2 for
 `Casing.first`, plus 4 for `ignoreAccents`, plus 8 for
 `Casing.ignored`, and plus 16 for `ignoreNumberForms`. Then come the
-levels of [the comparison](natural.temper.md) in turn, set apart by
+levels of [the comparison](smart.temper.md) in turn, set apart by
 U+0001, which is below every other code point used:
 1. **Letters and numbers:** for each character other than a digit, its
    base letter, folded fully (so `ß` gives `s s`), plus its case's
@@ -59,7 +59,7 @@ So the levels after the first hold numbers where 0 is usual, and the
 comparison reads a string that runs out as 0s. Then each level leaves
 out its trailing 0s, and the key leaves out its trailing empty levels,
 separators and all, without changing the order. Most keys are just the
-options letter and the first level: `naturalKey("file10")` is `A f i l
+options letter and the first level: `smartKey("file10")` is `A f i l
 e 2 1 0` (shifted), where an uppercase letter adds the case level up to
 it, and an accent the accents level.
 
@@ -271,8 +271,8 @@ with code points far past the separator's shift.
       }
     }
 
-    test("keys order as compareNatural") { test =>
-      checkKeys(test, fn (a: String, b: String): Int { compareNatural(a, b) }, fn (s: String): String { naturalKey(s) });
+    test("keys order as compareSmart") { test =>
+      checkKeys(test, fn (a: String, b: String): Int { compareSmart(a, b) }, fn (s: String): String { smartKey(s) });
     }
 
     test("keys order as each option's compare") { test =>
@@ -296,28 +296,28 @@ Code points are in hexadecimal.
 
     test("exact keys") {
       // Just the options letter.
-      assert(keyCodes(naturalKey("")) == "41");
+      assert(keyCodes(smartKey("")) == "41");
       // Letters and a number (shifted by 3), and nothing else to say.
-      assert(keyCodes(naturalKey("file10")) == "41 69 6c 6f 68 35 34 33");
+      assert(keyCodes(smartKey("file10")) == "41 69 6c 6f 68 35 34 33");
       // A run's leading zeros go after the first separator.
-      assert(keyCodes(naturalKey("a007")) == "41 64 34 3a 1 5");
+      assert(keyCodes(smartKey("a007")) == "41 64 34 3a 1 5");
       // Digits in another script, whose zero (from ASCII 0) goes after the second.
-      assert(keyCodes(naturalKey("x\u{662}\u{661}")) == "41 7b 35 35 34 1 1 633");
+      assert(keyCodes(smartKey("x\u{662}\u{661}")) == "41 7b 35 35 34 1 1 633");
       // A count of 10 digits is 9 then 1.
-      assert(keyCodes(naturalKey("1234567890")) == "41 3c 34 34 35 36 37 38 39 3a 3b 3c 33");
+      assert(keyCodes(smartKey("1234567890")) == "41 3c 34 34 35 36 37 38 39 3a 3b 3c 33");
       // é is e in the first level, and itself in the accents level.
-      assert(keyCodes(naturalKey("\u{E9}")) == "41 68 1 1 1 ec");
+      assert(keyCodes(smartKey("\u{E9}")) == "41 68 1 1 1 ec");
       // Folded fully first (ß to s s), case folded for accents.
-      assert(keyCodes(naturalKey("\u{DF}")) == "41 76 76 1 1 1 e2");
+      assert(keyCodes(smartKey("\u{DF}")) == "41 76 76 1 1 1 e2");
       // A is uppercase, 1 in the case level by default, 0 with upperFirst.
-      assert(keyCodes(naturalKey("Ab")) == "41 64 65 1 1 1 1 4");
+      assert(keyCodes(smartKey("Ab")) == "41 64 65 1 1 1 1 4");
       assert(keyCodes(upperOrder.key("Ab")) == "42 64 65 1 1 1 1 3 4");
       // Grouped by case: the case that comes second adds 0x110000 to the
       // first level, and there's no case level.
       assert(keyCodes(firstOrder.key("Ab")) == "43 d7ff 120 4965 65");
       assert(keyCodes(firstUpperOrder.key("Ab")) == "44 64 d7ff 120 4966");
       // The Kelvin sign is k, uppercase, and an odd form.
-      assert(keyCodes(naturalKey("\u{212A}")) == "41 6e 1 1 1 1 4 1 212d");
+      assert(keyCodes(smartKey("\u{212A}")) == "41 6e 1 1 1 1 4 1 212d");
       // Ignoring accents leaves the accents level empty.
       assert(keyCodes(accentlessOrder.key("\u{C9}")) == "45 68 1 1 1 1 4");
       // Ignoring case leaves out the last two levels, and upperFirst.
@@ -325,16 +325,16 @@ Code points are in hexadecimal.
       assert(keyCodes(new Order(Casing.ignored, true, false).key("\u{C9}")) == "49 68 1 1 1 ec");
       assert(keyCodes(baseOrder.key("\u{C9}T\u{C9}")) == keyCodes(baseOrder.key("ete")));
       // Ignoring number forms leaves the leading zeros and scripts levels empty.
-      assert(keyCodes(naturalKey("x01")) == "41 7b 34 34 1 4");
+      assert(keyCodes(smartKey("x01")) == "41 7b 34 34 1 4");
       assert(keyCodes(formlessOrder.key("x01")) == "51 7b 34 34");
       assert(keyCodes(formlessOrder.key("x\u{661}")) == "51 7b 34 34");
       // Past U+D7FB: U+D7FF, then two digits in base 0x7F00 from U+0100.
-      assert(keyCodes(naturalKey("\u{1F600}")) == "41 d7ff 102 2104");
+      assert(keyCodes(smartKey("\u{1F600}")) == "41 d7ff 102 2104");
     }
 
     test("keys stay below surrogates and above U+0000") {
       for (let s of ["", "a1", "\u{10FFFF}9", "\u{0}"]) {
-        let k = naturalKey(s);
+        let k = smartKey(s);
         var i = String.begin;
         while (k.hasIndex(i)) {
           assert(k[i] > 0 && k[i] < 0xD800);

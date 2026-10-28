@@ -102,7 +102,7 @@ and sorting gives one answer up to equal strings.
     }
 
     test("total order") { test =>
-      checkOrder(test, true) { a, b => compareNatural(a, b) };
+      checkOrder(test, true) { a, b => compareSmart(a, b) };
     }
 
     test("total order with each option") { test =>

@@ -1,13 +1,14 @@
-# Natural Order
+# Smart Order
 
 People expect `file2` before `file10`, but comparing code points puts
-`file10` first, since `1` comes before `2`. Natural order fixes that by
+`file10` first, since `1` comes before `2`. Smart order fixes that by
 comparing each run of decimal digits as a number, and everything else by
 code point. Digits in any script count, such as Arabic-Indic `٢` or
 fullwidth `２`.
 
-This isn't what Java and Kotlin call natural order (`naturalOrder()`),
-which for strings is the plain code-unit order this replaces.
+It's often called natural or [human sorting](https://en.wikipedia.org/wiki/Natural_sort_order). Ordable says
+"smart", since what Java and Kotlin call smart order (`naturalOrder()`)
+is, for strings, the plain code-unit order this replaces.
 
 ## Comparing
 
@@ -20,32 +21,32 @@ By default, as people expect: case only breaks ties, lowercase first, so
 `σ`), and accents only break ties before that, so `é` sorts with `e`. See
 [options](#options) for other orders.
 
-    export let compareNatural(a: String, b: String): Int {
-      natural.compare(a, b)
+    export let compareSmart(a: String, b: String): Int {
+      smart.compare(a, b)
     }
 
 ## Sorting
 
-A sorted copy, in natural order. Sorting is stable, though with a total
+A sorted copy, in smart order. Sorting is stable, though with a total
 order that only matters for equal strings.
 
-    export let sortNatural(strings: List<String>): List<String> {
-      natural.sort(strings)
+    export let sortSmart(strings: List<String>): List<String> {
+      smart.sort(strings)
     }
 
-A sorted copy of any items, in the natural order of a string from each,
-such as files by name: `sortNaturalByKey(files) { file => file.name }`.
+A sorted copy of any items, in the smart order of a string from each,
+such as files by name: `sortSmartByKey(files) { file => file.name }`.
 Each key is made once, not once per comparison, so `key` can do some work.
 Items with the same key keep their order. An `order` with
 [options](#options) changes the order.
 
-    export let sortNaturalByKey<T>(items: List<T>, key: fn (T): String, order: Order = natural): List<T> {
+    export let sortSmartByKey<T>(items: List<T>, key: fn (T): String, order: Order = smart): List<T> {
       sortByKeys(items, items.map(key), order)
     }
 
 Sorts positions by their keys, then picks the items in that order. Past
-a few items, it first makes each key's [natural sort key](key.temper.md),
-so each comparison is a plain string comparison instead of a natural
+a few items, it first makes each key's [smart sort key](key.temper.md),
+so each comparison is a plain string comparison instead of a smart
 one.
 
     let sortByKeys<T>(items: List<T>, keys: List<String>, order: Order): List<T> {
@@ -56,16 +57,16 @@ one.
       let sorted = if (items.length < sortKeysFrom) {
         positions.toList().sorted { a, b => compareWith(keys[a], keys[b], order) }
       } else {
-        let naturalKeys: List<String> = keys.map { k => keyWith(k, order) };
-        positions.toList().sorted { a, b => naturalKeys[a] <=> naturalKeys[b] }
+        let smartKeys: List<String> = keys.map { k => keyWith(k, order) };
+        positions.toList().sorted { a, b => smartKeys[a] <=> smartKeys[b] }
       };
       sorted.map { i => items[i] }
     }
 
 ## Options
 
-An `Order` is natural order with options, with `compare`, `sort`, and
-`key` as methods, and `sortNaturalByKey` takes one too. (A generic
+An `Order` is smart order with options, with `compare`, `sort`, and
+`key` as methods, and `sortSmartByKey` takes one too. (A generic
 `sortByKey` method would fit here, but Temper's C++ backend can't yet
 compile a generic method that calls a generic function, so it waits.) Every option has a default, so an object literal names only what
 changes, such as `{ upperFirst: true }`.
@@ -139,7 +140,7 @@ The options, and the functions as methods:
 
 The default order, behind the functions above.
 
-    let natural: Order = new Order(Casing.last, false, false, false);
+    let smart: Order = new Order(Casing.last, false, false, false);
 
     let sortKeysFrom = 16;
 
@@ -494,8 +495,8 @@ Past any combining marks at `start`.
 ## Tests
 
     let assertBefore(test: Test, a: String, b: String): Void {
-      assert(compareNatural(a, b) < 0) { "${a} not before ${b}" }
-      assert(compareNatural(b, a) > 0) { "${b} not after ${a}" }
+      assert(compareSmart(a, b) < 0) { "${a} not before ${b}" }
+      assert(compareSmart(b, a) > 0) { "${b} not after ${a}" }
     }
 
     let assertBeforeIn(test: Test, order: Order, a: String, b: String): Void {
@@ -545,7 +546,7 @@ Past any combining marks at `start`.
       assertBefore(test, "a", "A");
       assertBefore(test, "A", "b");
       assertBefore(test, "File2", "file10");
-      assert(compareNatural("Ab", "Ab") == 0);
+      assert(compareSmart("Ab", "Ab") == 0);
     }
 
     test("no accent before any accent") { test =>
@@ -619,9 +620,9 @@ Past any combining marks at `start`.
     }
 
     test("equal only when the same") { test =>
-      assert(compareNatural("", "") == 0);
-      assert(compareNatural("a10b", "a10b") == 0);
-      assert(compareNatural("é2", "é10") < 0);
+      assert(compareSmart("", "") == 0);
+      assert(compareSmart("a10b", "a10b") == 0);
+      assert(compareSmart("é2", "é10") < 0);
       // The Kelvin sign folds to k and is uppercase, as K is, so only the
       // code point tells them apart.
       assertBefore(test, "K", "\u{212A}");
@@ -655,7 +656,7 @@ Past any combining marks at `start`.
 
     test("sorting") { test =>
       let names = ["img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png"];
-      let sorted = sortNatural(names);
+      let sorted = sortSmart(names);
       assert(sorted.join(" ") { s => s } == "img1.png img2.png IMG2.png img10.png img12.png");
       let firstCased = firstOrder.sort(names);
       assert(firstCased.join(" ") { s => s } == "img1.png img2.png img10.png img12.png IMG2.png");
@@ -725,13 +726,13 @@ Past any combining marks at `start`.
         new Track("Track 2: Rise again", 30),
       ];
       var calls = 0;
-      let titles = sortNaturalByKey(tracks) { track =>
+      let titles = sortSmartByKey(tracks) { track =>
         calls += 1;
         track.title
       };
       assert(calls == 4);
       assert(titles.join(", ") { t => t.title } == "Track 1: Intro, track 2: Rise, Track 2: Rise again, Track 10: Outro");
-      let firstCased = sortNaturalByKey(tracks, fn (track: Track): String { track.title }, firstUpperOrder);
+      let firstCased = sortSmartByKey(tracks, fn (track: Track): String { track.title }, firstUpperOrder);
       assert(firstCased.join(", ") { t => t.title } == "Track 1: Intro, Track 2: Rise again, Track 10: Outro, track 2: Rise");
     }
 
@@ -739,6 +740,6 @@ Equal keys keep their order.
 
     test("sorting by key is stable") {
       let tracks = [new Track("b", 1), new Track("a", 2), new Track("b", 3), new Track("a", 4)];
-      let sorted = sortNaturalByKey(tracks) { track => track.title };
+      let sorted = sortSmartByKey(tracks) { track => track.title };
       assert(sorted.join(" ") { t => t.seconds.toString() } == "2 4 1 3");
     }

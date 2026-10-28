@@ -4,7 +4,7 @@
 //! print the same text. See ../README.md for how to run them.
 
 use ordable::builders::OrderBuilder;
-use ordable::{Casing, compare_natural, natural_key, sort_natural, sort_natural_by_key};
+use ordable::{Casing, compare_smart, smart_key, sort_smart, sort_smart_by_key};
 use std::sync::Arc;
 
 /// Ordable takes lists of shared strings.
@@ -46,26 +46,26 @@ fn main() {
         ("a", "B"), ("a", "A"), ("file10", "file10"),  // snippet: compare
     ];  // snippet: compare
     for (a, b) in pairs {  // snippet: compare
-        println!("{a} vs {b}: {}", order(compare_natural(a, b)));  // snippet: compare
+        println!("{a} vs {b}: {}", order(compare_smart(a, b)));  // snippet: compare
     }  // snippet: compare
 
     section("2. Sorting strings");
 
     let files = list(&["img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png"]);  // snippet: sort, options
-    println!("files: {}", join(&sort_natural(files.clone())));  // snippet: sort
+    println!("files: {}", join(&sort_smart(files.clone())));  // snippet: sort
 
     // Numbers of any length, and leading zeros only breaking ties.
     let versions = list(&["v1.10", "v2.0", "v1.9", "v10.1", "v1.2"]);  // snippet: numbers
-    println!("versions: {}", join(&sort_natural(versions)));  // snippet: numbers
+    println!("versions: {}", join(&sort_smart(versions)));  // snippet: numbers
     let big = list(&["n123456789012345678901234567890", "n9", "n99999999999999999999"]);  // snippet: numbers
-    println!("big numbers: {}", join(&sort_natural(big)));  // snippet: numbers
-    println!("leading zeros: {}", join(&sort_natural(list(&["2", "001", "1", "01"]))));  // snippet: ties
+    println!("big numbers: {}", join(&sort_smart(big)));  // snippet: numbers
+    println!("leading zeros: {}", join(&sort_smart(list(&["2", "001", "1", "01"]))));  // snippet: ties
 
-    // Natural keys sort by plain string comparison, as in a database.
-    let before = natural_key("file2") < natural_key("file10");  // snippet: keys
-    println!("natural keys, file2 before file10: {}", if before { "yes" } else { "no" });  // snippet: keys
+    // Smart keys sort by plain string comparison, as in a database.
+    let before = smart_key("file2") < smart_key("file10");  // snippet: keys
+    println!("smart keys, file2 before file10: {}", if before { "yes" } else { "no" });  // snippet: keys
     // Keys are the same in every language, so they can be stored and shared.
-    let hex: Vec<String> = natural_key("file10").chars().map(|c| format!("{:X}", c as u32)).collect();  // snippet: keys
+    let hex: Vec<String> = smart_key("file10").chars().map(|c| format!("{:X}", c as u32)).collect();  // snippet: keys
     println!("key for file10: {}", hex.join(" "));  // snippet: keys
 
     section("3. Options");
@@ -88,7 +88,7 @@ fn main() {
 
     section("4. Sorting your own types");
 
-    // sort_natural_by_key sorts any items by a string from each, made once
+    // sort_smart_by_key sorts any items by a string from each, made once
     // each.
     let tracks = vec![  // snippet: by-key
         Track { title: "Track 10: Outro".into(), seconds: 95 },  // snippet: by-key
@@ -96,16 +96,16 @@ fn main() {
         Track { title: "Track 2: Rise".into(), seconds: 184 },  // snippet: by-key
     ];  // snippet: by-key
     // None for the default order, since Rust has no default arguments.
-    let by_title = sort_natural_by_key(tracks.clone(), Arc::new(|track: Track| Arc::new(track.title)), None);  // snippet: by-key
+    let by_title = sort_smart_by_key(tracks.clone(), Arc::new(|track: Track| Arc::new(track.title)), None);  // snippet: by-key
     println!("tracks by title:");
     for track in by_title.iter() {
         println!("  {} ({} s)", track.title, track.seconds);
     }
 
-    // Or sort with the language's own tools, using compare_natural to
+    // Or sort with the language's own tools, using compare_smart to
     // compare. It returns an i32, so compare that with 0 for an Ordering.
     let mut own = tracks;
-    own.sort_by(|a, b| compare_natural(a.title.as_str(), b.title.as_str()).cmp(&0));
+    own.sort_by(|a, b| compare_smart(a.title.as_str(), b.title.as_str()).cmp(&0));
     let titles: Vec<&str> = own.iter().map(|track| track.title.as_str()).collect();
     println!("with the language's own sort: {}", titles.join(", "));
 }

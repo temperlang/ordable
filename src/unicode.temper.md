@@ -1,6 +1,6 @@
 # Unicode
 
-Character facts that natural order needs, from generated tables
+Character facts that smart order needs, from generated tables
 ([unicode-tables](unicode-tables.temper.md)). They're kept apart from the
 rest, and internal, so they can move to Unicode support built into
 Temper later without changing Ordable's API.

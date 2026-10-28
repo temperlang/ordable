@@ -29,26 +29,26 @@ var pairs = new[] {  // snippet: compare
 };  // snippet: compare
 foreach (var (a, b) in pairs)  // snippet: compare
 {  // snippet: compare
-    Console.WriteLine($"{a} vs {b}: {Relation(CompareNatural(a, b))}");  // snippet: compare
+    Console.WriteLine($"{a} vs {b}: {Relation(CompareSmart(a, b))}");  // snippet: compare
 }  // snippet: compare
 
 Section("2. Sorting strings");
 
 var files = new[] { "img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png" };  // snippet: sort, options
-Console.WriteLine($"files: {string.Join(" ", SortNatural(files))}");  // snippet: sort
+Console.WriteLine($"files: {string.Join(" ", SortSmart(files))}");  // snippet: sort
 
 // Numbers of any length, and leading zeros only breaking ties.
 var versions = new[] { "v1.10", "v2.0", "v1.9", "v10.1", "v1.2" };  // snippet: numbers
-Console.WriteLine($"versions: {string.Join(" ", SortNatural(versions))}");  // snippet: numbers
+Console.WriteLine($"versions: {string.Join(" ", SortSmart(versions))}");  // snippet: numbers
 var big = new[] { "n123456789012345678901234567890", "n9", "n99999999999999999999" };  // snippet: numbers
-Console.WriteLine($"big numbers: {string.Join(" ", SortNatural(big))}");  // snippet: numbers
-Console.WriteLine($"leading zeros: {string.Join(" ", SortNatural(new[] { "2", "001", "1", "01" }))}");  // snippet: ties
+Console.WriteLine($"big numbers: {string.Join(" ", SortSmart(big))}");  // snippet: numbers
+Console.WriteLine($"leading zeros: {string.Join(" ", SortSmart(new[] { "2", "001", "1", "01" }))}");  // snippet: ties
 
-// Natural keys sort by plain string comparison, as in a database.
-var before = string.CompareOrdinal(NaturalKey("file2"), NaturalKey("file10")) < 0;  // snippet: keys
-Console.WriteLine($"natural keys, file2 before file10: {(before ? "yes" : "no")}");  // snippet: keys
+// Smart keys sort by plain string comparison, as in a database.
+var before = string.CompareOrdinal(SmartKey("file2"), SmartKey("file10")) < 0;  // snippet: keys
+Console.WriteLine($"smart keys, file2 before file10: {(before ? "yes" : "no")}");  // snippet: keys
 // Keys are the same in every language, so they can be stored and shared.
-Console.WriteLine($"key for file10: {string.Join(" ", NaturalKey("file10").Select(c => ((int)c).ToString("X")))}");  // snippet: keys
+Console.WriteLine($"key for file10: {string.Join(" ", SmartKey("file10").Select(c => ((int)c).ToString("X")))}");  // snippet: keys
 
 Section("3. Options");
 
@@ -70,17 +70,17 @@ Console.WriteLine($"ignoring number forms, file01 vs file1: {Relation(byValue.Co
 
 Section("4. Sorting your own types");
 
-// SortNaturalByKey sorts any items by a string from each, made once each.
+// SortSmartByKey sorts any items by a string from each, made once each.
 var tracks = new[] { new Track("Track 10: Outro", 95), new Track("Track 1: Intro", 61), new Track("Track 2: Rise", 184) };  // snippet: by-key
-var byTitle = SortNaturalByKey(tracks, track => track.Title);  // snippet: by-key
+var byTitle = SortSmartByKey(tracks, track => track.Title);  // snippet: by-key
 Console.WriteLine("tracks by title:");
 foreach (var track in byTitle)
 {
     Console.WriteLine($"  {track.Title} ({track.Seconds} s)");
 }
 
-// Or sort with the language's own tools, using CompareNatural to compare.
-var own = tracks.OrderBy(track => track.Title, Comparer<string>.Create(CompareNatural));
+// Or sort with the language's own tools, using CompareSmart to compare.
+var own = tracks.OrderBy(track => track.Title, Comparer<string>.Create(CompareSmart));
 Console.WriteLine($"with the language's own sort: {string.Join(", ", own.Select(track => track.Title))}");
 
 record Track(string Title, int Seconds);

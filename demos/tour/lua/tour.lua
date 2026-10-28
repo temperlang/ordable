@@ -4,7 +4,7 @@
 -- the same text. See ../README.md for how to run them.
 
 local ordable = require("ordable")
-local compareNatural, sortNatural, sortNaturalByKey = ordable.compareNatural, ordable.sortNatural, ordable.sortNaturalByKey
+local compareSmart, sortSmart, sortSmartByKey = ordable.compareSmart, ordable.sortSmart, ordable.sortSmartByKey
 local Casing, Order = ordable.Casing, ordable.Order
 
 local function order(n)
@@ -27,27 +27,27 @@ local pairs = {  -- snippet: compare
   { "a", "B" }, { "a", "A" }, { "file10", "file10" },  -- snippet: compare
 }  -- snippet: compare
 for _, pair in ipairs(pairs) do  -- snippet: compare
-  print(pair[1] .. " vs " .. pair[2] .. ": " .. order(compareNatural(pair[1], pair[2])))  -- snippet: compare
+  print(pair[1] .. " vs " .. pair[2] .. ": " .. order(compareSmart(pair[1], pair[2])))  -- snippet: compare
 end  -- snippet: compare
 
 section("2. Sorting strings")
 
 local files = { "img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png" }  -- snippet: sort, options
-print("files: " .. table.concat(sortNatural(files), " "))  -- snippet: sort
+print("files: " .. table.concat(sortSmart(files), " "))  -- snippet: sort
 
 -- Numbers of any length, and leading zeros only breaking ties.
 local versions = { "v1.10", "v2.0", "v1.9", "v10.1", "v1.2" }  -- snippet: numbers
-print("versions: " .. table.concat(sortNatural(versions), " "))  -- snippet: numbers
+print("versions: " .. table.concat(sortSmart(versions), " "))  -- snippet: numbers
 local big = { "n123456789012345678901234567890", "n9", "n99999999999999999999" }  -- snippet: numbers
-print("big numbers: " .. table.concat(sortNatural(big), " "))  -- snippet: numbers
-print("leading zeros: " .. table.concat(sortNatural({ "2", "001", "1", "01" }), " "))  -- snippet: ties
+print("big numbers: " .. table.concat(sortSmart(big), " "))  -- snippet: numbers
+print("leading zeros: " .. table.concat(sortSmart({ "2", "001", "1", "01" }), " "))  -- snippet: ties
 
--- Natural keys sort by plain string comparison, as in a database.
-print("natural keys, file2 before file10: " .. (ordable.naturalKey("file2") < ordable.naturalKey("file10") and "yes" or "no"))  -- snippet: keys
+-- Smart keys sort by plain string comparison, as in a database.
+print("smart keys, file2 before file10: " .. (ordable.smartKey("file2") < ordable.smartKey("file10") and "yes" or "no"))  -- snippet: keys
 -- Keys are the same in every language, so they can be stored and shared.
 -- (This key is all ASCII, so its bytes are its code points.)
 local hex = {}  -- snippet: keys
-for _, byte in ipairs({ ordable.naturalKey("file10"):byte(1, -1) }) do  -- snippet: keys
+for _, byte in ipairs({ ordable.smartKey("file10"):byte(1, -1) }) do  -- snippet: keys
   hex[#hex + 1] = string.format("%X", byte)  -- snippet: keys
 end  -- snippet: keys
 print("key for file10: " .. table.concat(hex, " "))  -- snippet: keys
@@ -72,22 +72,22 @@ print("ignoring number forms, file01 vs file1: " .. order(byValue:compare("file0
 
 section("4. Sorting your own types")
 
--- sortNaturalByKey sorts any items by a string from each, made once each.
+-- sortSmartByKey sorts any items by a string from each, made once each.
 local tracks = {  -- snippet: by-key
   { title = "Track 10: Outro", seconds = 95 },  -- snippet: by-key
   { title = "Track 1: Intro", seconds = 61 },  -- snippet: by-key
   { title = "Track 2: Rise", seconds = 184 },  -- snippet: by-key
 }  -- snippet: by-key
-local byTitle = sortNaturalByKey(tracks, function(track) return track.title end)  -- snippet: by-key
+local byTitle = sortSmartByKey(tracks, function(track) return track.title end)  -- snippet: by-key
 print("tracks by title:")
 for _, track in ipairs(byTitle) do
   print("  " .. track.title .. " (" .. track.seconds .. " s)")
 end
 
--- Or sort with the language's own tools, using compareNatural to compare.
+-- Or sort with the language's own tools, using compareSmart to compare.
 -- table.sort isn't stable, which doesn't matter for distinct titles.
 local own = { table.unpack(tracks) }
-table.sort(own, function(a, b) return compareNatural(a.title, b.title) < 0 end)
+table.sort(own, function(a, b) return compareSmart(a.title, b.title) < 0 end)
 local titles = {}
 for _, track in ipairs(own) do titles[#titles + 1] = track.title end
 print("with the language's own sort: " .. table.concat(titles, ", "))

@@ -30,7 +30,7 @@ const SPOTS = [
   {
     id: "sort",
     title: "Sorting strings",
-    about: "`sortNatural` gives a sorted copy of a list of strings, with numbers compared by value.",
+    about: "`sortSmart` gives a sorted copy of a list of strings, with numbers compared by value.",
     target: () => find(".hero-demo"),
   },
   {
@@ -55,32 +55,32 @@ const SPOTS = [
   {
     id: "ties",
     title: "One answer, whatever the input order",
-    about: "By default, `compareNatural` gives 0 only for the same string, so a list always sorts the same way, whatever its order, as shuffling shows. Leading zeros, digit scripts, accents, and case only break ties, so 1 comes before 01.",
+    about: "By default, `compareSmart` gives 0 only for the same string, so a list always sorts the same way, whatever its order, as shuffling shows. Leading zeros, digit scripts, accents, and case only break ties, so 1 comes before 01.",
     // Ordable's "No ties, ever", the claim the shuffle tests.
     target: () => find("#ordable-stat"),
   },
   {
     id: "by-key",
     title: "Sorting your own types",
-    about: "`sortNaturalByKey` sorts any items by a string from each. This column sorts its rows by their text this way.",
+    about: "`sortSmartByKey` sorts any items by a string from each. This column sorts its rows by their text this way.",
     target: () => find("#rows-ordable"),
   },
   {
     id: "keys",
-    title: "Natural keys",
-    about: "`naturalKey` gives a string that sorts by plain comparison exactly as its source sorts naturally, the same in every language.",
+    title: "Smart keys",
+    about: "`smartKey` gives a string that sorts by plain comparison exactly as its source sorts in smart order, the same in every language.",
     target: () => find("#key-a"),
   },
   {
     id: "compare",
     title: "Comparing two strings",
-    about: "`compareNatural` returns a negative number if the first comes first, positive if the second does, and 0 only for the same string.",
+    about: "`compareSmart` returns a negative number if the first comes first, positive if the second does, and 0 only for the same string.",
     target: () => find("#key-check"),
   },
 ];
 
 /**
- * An Ordable name, like `sortNatural`, as `file`'s language spells it:
+ * An Ordable name, like `sortSmart`, as `file`'s language spells it:
  * snake_case in Python and Rust, and PascalCase in C#.
  *
  * @param {string} name

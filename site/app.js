@@ -18,22 +18,22 @@ initSortOff();
 
 const PLAY_START = `// Numbers compare by value, at any length.
 const files = ["img12.png", "img10.png", "IMG2.png", "img1.png"];
-console.log(sortNatural(files));
+console.log(sortSmart(files));
 
 // Options: case first puts every img before every IMG.
 const caseFirst = Order.new({ casing: Casing.first });
 console.log(caseFirst.sort(files));
 
 // Negative: the first comes first. 0 only for the same string.
-console.log(compareNatural("v1.9", "v1.10"));
-console.log(compareNatural("1", "01"));
+console.log(compareSmart("v1.9", "v1.10"));
+console.log(compareSmart("1", "01"));
 
 // Sort anything by a string from each.
 const songs = [{ title: "Track 10" }, { title: "Track 9" }];
-console.log(sortNaturalByKey(songs, (song) => song.title));
+console.log(sortSmartByKey(songs, (song) => song.title));
 
 // Keys that sort with plain comparison, as in a database.
-console.log(naturalKey("file2") < naturalKey("file10"));
+console.log(smartKey("file2") < smartKey("file10"));
 `;
 
 const playCode = /** @type {HTMLTextAreaElement} */ ($("play-code"));
