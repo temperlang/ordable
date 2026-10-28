@@ -7,7 +7,7 @@
 
 The data is Python's (`unicodedata`), which must be Unicode
 `UNICODE_VERSION`, so tables don't change by accident with the Python
-version. Stored natural keys depend on these tables, so moving to a new
+version. Stored smart keys depend on these tables, so moving to a new
 Unicode version (raise `UNICODE_VERSION`, then run with a Python that
 has it) can change some keys, and a release that does says so.
 """
@@ -100,6 +100,44 @@ def base_pairs() -> list[tuple[int, int]]:
     assert dict(pairs)[0xE9] == 0x65 and dict(pairs)[0x1D6] == 0x75 and 0xF8 not in dict(pairs)
     assert all(c >= 0xC0 for c, _ in pairs)
     return pairs
+
+
+def mark_runs() -> list[tuple[int, int]]:
+    """Combining marks (category Mn, as `base_letter` uses) as runs of a
+    start and a count, in order."""
+    runs: list[list[int]] = []
+    for c in range(0x110000):
+        if 0xD800 <= c <= 0xDFFF or unicodedata.category(chr(c)) != "Mn":
+            continue
+        if runs and runs[-1][0] + runs[-1][1] == c:
+            runs[-1][1] += 1
+        else:
+            runs.append([c, 1])
+    assert runs[0] == [0x300, 0x70]
+    return [(start, count) for start, count in runs]
+
+
+def compositions() -> list[tuple[int, int, int]]:
+    """Canonical compositions of a character and one combining mark into one
+    code point, as NFC makes them, as `e` and U+0301 to `é`: a base, a mark,
+    and the composed code point, sorted by base and then mark. Composing one
+    mark at a time, in canonical order, gives `ǖ` from `u`, U+0308, and
+    U+0304."""
+    found = []
+    for c in range(0x110000):
+        if 0xD800 <= c <= 0xDFFF:
+            continue
+        decomposition = unicodedata.decomposition(chr(c))
+        if not decomposition or decomposition.startswith("<"):
+            continue
+        parts = [int(code, 16) for code in decomposition.split()]
+        if (len(parts) == 2 and unicodedata.category(chr(parts[1])) == "Mn"
+                and unicodedata.normalize("NFC", chr(parts[0]) + chr(parts[1])) == chr(c)):
+            found.append((parts[0], parts[1], c))
+    found.sort()
+    pairs = {(b, m): c for b, m, c in found}
+    assert pairs[(0x65, 0x301)] == 0xE9 and pairs[(0xFC, 0x304)] == 0x1D6
+    return found
 
 
 def full_folds() -> list[tuple[int, list[int]]]:
@@ -230,6 +268,8 @@ def main() -> None:
     bases = base_pairs()
     fulls = full_folds()
     odd = odd_cases()
+    marks = mark_runs()
+    composed = compositions()
     check_lookups(zeros, runs, bases, fulls)
     fold_values = [
         f"0x{start:X}, {count}, {stride}, {delta}" for start, count, stride, delta in runs
@@ -295,6 +335,30 @@ level of comparison. All are from U+00B5 up.
     let oddCases: List<Int> = [
 {rows([f"0x{c:X}" for c in odd], 8)},
     ];
+
+Combining marks (general category Mn), as {len(marks)} runs of a start and
+a count, in order. A mark after a letter is part of that letter, as its
+accent.
+
+    let markRuns: List<Int> = buildMarkRuns();
+
+    let buildMarkRuns(): List<Int> {{
+      let runs = new ListBuilder<Int>();
+{chunks([f"0x{a:X}, {n}" for a, n in marks], 8)}
+      runs.toList()
+    }}
+
+Canonical compositions of a code point and one combining mark, as NFC
+makes them: {len(composed)} entries of a base, a mark, and the composed
+code point, sorted by base and then mark, so `e` and U+0301 make `é`.
+
+    let compositions: List<Int> = buildCompositions();
+
+    let buildCompositions(): List<Int> {{
+      let runs = new ListBuilder<Int>();
+{chunks([f"0x{b:X}, 0x{m:X}, 0x{c:X}" for b, m, c in composed], 6)}
+      runs.toList()
+    }}
 """)
 
 

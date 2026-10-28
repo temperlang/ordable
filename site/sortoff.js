@@ -1,9 +1,9 @@
 // @ts-check
 
 // The hero's before and after, and the sort-off: one list sorted three
-// ways, side by side, with natural keys for a chosen row.
+// ways, side by side, with smart keys for a chosen row.
 
-import { Casing, Order, sortNatural, sortNaturalByKey } from "ordable";
+import { Casing, Order, sortSmart, sortSmartByKey } from "ordable";
 
 /** How much case counts, from least to most: `Casing`'s values, by name. */
 const CASINGS = ["ignored", "last", "first"];
@@ -24,7 +24,7 @@ const SWITCHES = [
  * A sample list, in a deliberately jumbled input order.
  * @typedef {{ name: string, items: string[], note?: string, keys?: [string, string] }} Sample
  *
- * `keys` is the pair the natural keys panel starts on: neighbors that show
+ * `keys` is the pair the smart keys panel starts on: neighbors that show
  * the list's point in their keys, used when they're neighbors in Ordable's
  * order.
  */
@@ -120,7 +120,7 @@ function flip(list, items, duration = 450) {
   });
 }
 
-// The hero: file names in plain order, gliding into natural order.
+// The hero: file names in plain order, gliding into smart order.
 
 const HERO = ["file1.txt", "file10.txt", "file2.txt", "file3.txt"];
 
@@ -142,12 +142,12 @@ function initHero() {
     // languages' plain sorts compare code units or bytes.
     list.replaceChildren(...[...HERO].sort().map((name) => /** @type {HTMLElement} */ (rows.get(name))));
     label.textContent = "Plain sort";
-    list.classList.remove("natural");
+    list.classList.remove("smart");
     timer = setTimeout(
       () => {
-        flip(list, sortNatural(HERO).map((name) => /** @type {HTMLElement} */ (rows.get(name))), 900);
+        flip(list, sortSmart(HERO).map((name) => /** @type {HTMLElement} */ (rows.get(name))), 900);
         label.textContent = "Ordable";
-        list.classList.add("natural");
+        list.classList.add("smart");
       },
       reducedMotion.matches ? 1600 : 1100,
     );
@@ -272,7 +272,7 @@ export function initSortOff() {
 
   function render() {
     const plain = plainSort(input);
-    const ordable = sortNaturalByKey(input, (row) => row.text, order);
+    const ordable = sortSmartByKey(input, (row) => row.text, order);
     // A stable sort, so tied rows keep their input order.
     const intl = [...input].sort((a, b) => intlCollator.compare(a.text, b.text));
     ordableOrder = ordable;
@@ -306,7 +306,7 @@ export function initSortOff() {
     ];
     $("ordable-sub").innerHTML = chosenOptions.length
       ? `Order.new({ ${chosenOptions.join(", ")} })<wbr>.sort(list)`
-      : "sortNatural<wbr>(list)";
+      : "sortSmart<wbr>(list)";
     $("intl-sub").textContent = Object.entries(intlOptions(options)).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(", ") +
       (options.casing === "first" ? " (can't put case first)" : "");
     $("input-order").textContent = input.map((row) => row.text).join(" · ");
@@ -467,7 +467,7 @@ export function initSortOff() {
     shuffleButton.disabled = false;
   });
 
-  // Natural keys for the chosen row and the row after it.
+  // Smart keys for the chosen row and the row after it.
 
   /** @param {string | null} id */
   function choose(id) {
@@ -545,7 +545,7 @@ export function initSortOff() {
       const [first, second] = rows.indexOf(b) > i ? [a, b] : [b, a];
       const keyFirst = keyOf(first.text);
       const keySecond = keyOf(second.text);
-      const named = chosenOptionsCount() ? "this order" : "compareNatural";
+      const named = chosenOptionsCount() ? "this order" : "compareSmart";
       if (compare(first.text, second.text) === 0) {
         const same = keyFirst === keySecond;
         $("key-check").textContent =

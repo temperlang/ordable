@@ -165,7 +165,7 @@ h2 {
   color: var(--muted);
 }
 
-#hero-list.natural li {
+#hero-list.smart li {
   border-color: color-mix(in oklab, var(--accent) 45%, var(--border));
 }
 
@@ -558,7 +558,7 @@ ol.rows li.tie::after {
   color: var(--muted);
 }
 
-/* Natural keys for the chosen row. */
+/* Smart keys for the chosen row. */
 .keys {
   margin-top: 1.5rem;
   padding: 1rem 1.1rem;

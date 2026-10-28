@@ -53,11 +53,11 @@ These are candidates for options, without changing the defaults.
 
 Sorting 20,000 file names, median of several runs (one noisy machine, so
 rough), measured 2026-10-27 with the current defaults: accents, full
-case folding, and case as a tiebreak. `sortNatural` makes each string's
-natural sort key once and then sorts by plain string comparison;
-comparing with `compareNatural` directly is shown too.
+case folding, and case as a tiebreak. `sortSmart` makes each string's
+smart sort key once and then sorts by plain string comparison;
+comparing with `compareSmart` directly is shown too.
 
-| Language | Ordable `sortNatural` | Ordable comparator | Others |
+| Language | Ordable `sortSmart` | Ordable comparator | Others |
 |---|---|---|---|
 | Python | 1.7 s | not measured | `natsort` 0.12 s as a sort key |
 | JavaScript | 0.052–0.054 s | 0.08 s | `Intl.Collator` 0.061 s |
@@ -65,7 +65,7 @@ comparing with `compareNatural` directly is shown too.
 
 Compact keys made the difference over the day before (timed alternately
 against the old layout): keys for these names went from 3.6 to 1.3 times
-their string's length, and `sortNatural` from 1.9 to 1.7 s in Python, 62–74
+their string's length, and `sortSmart` from 1.9 to 1.7 s in Python, 62–74
 to 52–54 ms in JavaScript, and 67 to 46 ms in Rust, where making 20,000
 keys went from 54 to 34 ms. In Python, most of the time is generated code
 doing simple integer and string steps through helper calls, which Temper
@@ -74,7 +74,7 @@ itself can make faster.
 A taste of more speed in Rust (2026-10-26): Temper's Rust output shares
 values with `Arc`, so they could cross threads. Converting a copy of
 Ordable's generated Rust to `Rc` by hand, timed against the same copy
-with `Arc`, alternately: `sortNatural` went from 26 to 14 ms, sorting by
-`compareNatural` from 37 to 30 ms, and 20,000 natural keys from 16 to
+with `Arc`, alternately: `sortSmart` went from 26 to 14 ms, sorting by
+`compareSmart` from 37 to 30 ms, and 20,000 smart keys from 16 to
 8–11 ms. Temper may use `Rc` where values stay on one thread, once its
 model for threads is settled.

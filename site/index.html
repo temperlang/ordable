@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ordable: natural sorting for every language</title>
+  <title>Ordable: smart sorting for every language</title>
   <meta name="description" content="Sorts strings the way people expect, file2 before file10, with the same results in C++, C#, Java, JavaScript, Lua, Python, and Rust.">
   <link rel="stylesheet" href="style.css">
   <script type="importmap">
@@ -35,7 +35,7 @@
           <a href="#made">How it's made</a>
         </nav>
       </div>
-      <figure class="hero-demo" aria-label="Plain sorting, then natural order">
+      <figure class="hero-demo" aria-label="Plain sorting, then smart order">
         <figcaption>
           <span id="hero-label">Plain sort</span>
           <button type="button" id="hero-replay" class="replay" aria-label="Replay">↻</button>
@@ -88,7 +88,7 @@
         <div class="col ordable" id="col-ordable">
           <div class="col-head">
             <h3>Ordable</h3>
-            <p class="col-sub"><code id="ordable-sub">sortNatural(list)</code></p>
+            <p class="col-sub"><code id="ordable-sub">sortSmart(list)</code></p>
             <p class="col-stat" id="ordable-stat"></p>
           </div>
           <ol class="rows" id="rows-ordable"></ol>
@@ -109,10 +109,10 @@
       <p class="note" id="shuffle-note" aria-live="polite"></p>
 
       <div class="keys" id="keys" aria-labelledby="keys-title">
-        <h3 id="keys-title">Natural keys</h3>
+        <h3 id="keys-title">Smart keys</h3>
         <p class="keys-intro">
-          Click an Ordable row. Its natural key is a string that sorts by
-          plain comparison exactly as the row sorts naturally. Code points in
+          Click an Ordable row. Its smart key is a string that sorts by
+          plain comparison exactly as the row sorts in smart order. Code points in
           hex; <span class="sep">1</span> separates levels. A number goes in
           as its count of digits, then its digits, so 9 (one digit) comes
           before 10 (two), however they're written; the highlight marks
@@ -126,7 +126,7 @@
         </dl>
         <p class="checks"><span id="key-check"></span> <span id="key-all"></span></p>
         <p class="keys-db">
-          Store <code>naturalKey(name)</code> in an indexed database column
+          Store <code>smartKey(name)</code> in an indexed database column
           and <code>ORDER BY</code> it, with a binary collation: the same keys
           come from every language.
         </p>
@@ -138,9 +138,9 @@
     <section id="play">
       <h2>Play with the API</h2>
       <p>
-        Edit and run JavaScript using <code>sortNatural</code>,
-        <code>compareNatural</code>, <code>sortNaturalByKey</code>,
-        <code>naturalKey</code>, and <code>Order</code> for options.
+        Edit and run JavaScript using <code>sortSmart</code>,
+        <code>compareSmart</code>, <code>sortSmartByKey</code>,
+        <code>smartKey</code>, and <code>Order</code> for options.
         Ctrl+Enter runs it too.
       </p>
       <p class="more">

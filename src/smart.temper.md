@@ -1,13 +1,14 @@
-# Natural Order
+# Smart Order
 
 People expect `file2` before `file10`, but comparing code points puts
-`file10` first, since `1` comes before `2`. Natural order fixes that by
+`file10` first, since `1` comes before `2`. Smart order fixes that by
 comparing each run of decimal digits as a number, and everything else by
 code point. Digits in any script count, such as Arabic-Indic `٢` or
 fullwidth `２`.
 
-This isn't what Java and Kotlin call natural order (`naturalOrder()`),
-which for strings is the plain code-unit order this replaces.
+It's often called natural or [human sorting](https://en.wikipedia.org/wiki/Natural_sort_order). Ordable says
+"smart", since what Java and Kotlin call smart order (`naturalOrder()`)
+is, for strings, the plain code-unit order this replaces.
 
 ## Comparing
 
@@ -20,54 +21,34 @@ By default, as people expect: case only breaks ties, lowercase first, so
 `σ`), and accents only break ties before that, so `é` sorts with `e`. See
 [options](#options) for other orders.
 
-    export let compareNatural(a: String, b: String): Int {
-      natural.compare(a, b)
+    export let compareSmart(a: String, b: String): Int {
+      smart.compare(a, b)
     }
 
 ## Sorting
 
-A sorted copy, in natural order. Sorting is stable, though with a total
+A sorted copy, in smart order. Sorting is stable, though with a total
 order that only matters for equal strings.
 
-    export let sortNatural(strings: List<String>): List<String> {
-      natural.sort(strings)
+    export let sortSmart(strings: List<String>): List<String> {
+      smart.sort(strings)
     }
 
-A sorted copy of any items, in the natural order of a string from each,
-such as files by name: `sortNaturalByKey(files) { file => file.name }`.
+A sorted copy of any items, in the smart order of a string from each,
+such as files by name: `sortSmartByKey(files) { file => file.name }`.
 Each key is made once, not once per comparison, so `key` can do some work.
 Items with the same key keep their order. An `order` with
 [options](#options) changes the order.
 
-    export let sortNaturalByKey<T>(items: List<T>, key: fn (T): String, order: Order = natural): List<T> {
-      sortByKeys(items, items.map(key), order)
-    }
-
-Sorts positions by their keys, then picks the items in that order. Past
-a few items, it first makes each key's [natural sort key](key.temper.md),
-so each comparison is a plain string comparison instead of a natural
-one.
-
-    let sortByKeys<T>(items: List<T>, keys: List<String>, order: Order): List<T> {
-      let positions = new ListBuilder<Int>();
-      for (var i = 0; i < items.length; i += 1) {
-        positions.add(i);
-      }
-      let sorted = if (items.length < sortKeysFrom) {
-        positions.toList().sorted { a, b => compareWith(keys[a], keys[b], order) }
-      } else {
-        let naturalKeys: List<String> = keys.map { k => keyWith(k, order) };
-        positions.toList().sorted { a, b => naturalKeys[a] <=> naturalKeys[b] }
-      };
-      sorted.map { i => items[i] }
+    export let sortSmartByKey<T>(items: List<T>, key: fn (T): String, order: Order = smart): List<T> {
+      order.sortByKey(items, key)
     }
 
 ## Options
 
-An `Order` is natural order with options, with `compare`, `sort`, and
-`key` as methods, and `sortNaturalByKey` takes one too. (A generic
-`sortByKey` method would fit here, but Temper's C++ backend can't yet
-compile a generic method that calls a generic function, so it waits.) Every option has a default, so an object literal names only what
+An `Order` is smart order with options, with `compare`, `sort`,
+`sortByKey`, and `key` as methods, and `sortSmartByKey` takes one too.
+Every option has a default, so an object literal names only what
 changes, such as `{ upperFirst: true }`.
 
 The options answer two questions. First, how much case counts, from
@@ -131,15 +112,38 @@ The options, and the functions as methods:
       public compare(a: String, b: String): Int { compareWith(a, b, this) }
 
       public sort(strings: List<String>): List<String> {
-        sortByKeys(strings, strings, this)
+        sortedPositions(strings).map { i => strings[i] }
+      }
+
+      public sortByKey<T>(items: List<T>, key: fn (T): String): List<T> {
+        sortedPositions(items.map(key)).map { i => items[i] }
       }
 
       public key(s: String): String { keyWith(s, this) }
+
+Positions sorted by their keys, stably. Past a few items, it first
+makes each key's [smart sort key](key.temper.md), so each comparison is
+a plain string comparison instead of a smart one. (Generic methods call
+only methods like this one, not generic functions of this module, which
+Temper's C++ backend can't yet declare in time.)
+
+      private sortedPositions(keys: List<String>): List<Int> {
+        let positions = new ListBuilder<Int>();
+        for (var i = 0; i < keys.length; i += 1) {
+          positions.add(i);
+        }
+        if (keys.length < sortKeysFrom) {
+          positions.toList().sorted { a, b => compareWith(keys[a], keys[b], this) }
+        } else {
+          let smartKeys: List<String> = keys.map { k => keyWith(k, this) };
+          positions.toList().sorted { a, b => smartKeys[a] <=> smartKeys[b] }
+        }
+      }
     }
 
 The default order, behind the functions above.
 
-    let natural: Order = new Order(Casing.last, false, false, false);
+    let smart: Order = new Order(Casing.last, false, false, false);
 
     let sortKeysFrom = 16;
 
@@ -150,7 +154,8 @@ tie:
 
 1. **Letters and numbers.** Both strings are walked together, a
    character or a run of digits at a time. Accents don't count at this
-   level, so `é` sorts with `e`, and letters fold fully, so `ß` matches
+   level, whether a letter carries them in one code point or as combining
+   marks after it (`e` and U+0301), so `é` sorts with `e`, and letters fold fully, so `ß` matches
    `ss`, and `Σ` matches `σ` and `ς`. With `Casing.first`, each letter's
    case comes first, before the letter itself. Numbers
    compare by value without converting them, so any number of digits
@@ -165,13 +170,17 @@ tie:
    `١`.
 4. **Accents:** the first difference in the characters other than
    digits, case folded, where one without an
-   accent comes first, so `e` before `é`, and `ss` before `ß`.
+   accent comes first, so `e` before `é`, and `ss` before `ß`. A letter's
+   combining marks count as its precomposed form would, and a mark with
+   none counts on its own.
 5. **Case:** the first character that's not folded in one string but is
    in the other, lowercase first (or uppercase, with `upperFirst`), so
    `e` before `E`.
 6. **Code points:** the first difference in odd forms of letters, such
    as the Kelvin sign `K`, which folds and has case like `K` but comes
-   after it. Only 30 characters are odd forms.
+   after it (only 30 characters are odd forms), or in how a letter's
+   accents are written, a letter with combining marks coming after its
+   precomposed form, unless accents are ignored.
 
 With `Casing.first`, case is already in the first level, so the case
 level is left out.
@@ -239,7 +248,7 @@ is Unicode's ([unicode](unicode.temper.md)).
           restA = nextRest(restA);
         } else {
           let c = a[i];
-          i = a.next(i);
+          i = skipMarks(a, a.next(i));
           leadA = leadWeight(c, first, order);
           unitA = firstUnit(c) + leadA;
           restA = foldRest(c);
@@ -250,7 +259,7 @@ is Unicode's ([unicode](unicode.temper.md)).
           restB = nextRest(restB);
         } else {
           let c = b[j];
-          j = b.next(j);
+          j = skipMarks(b, b.next(j));
           leadB = leadWeight(c, first, order);
           unitB = firstUnit(c) + leadB;
           restB = foldRest(c);
@@ -340,35 +349,84 @@ only what's unusual counts and keys can leave trailing 0s out
       if (!marks && !coded) {
         return 0;
       }
-      var i = skipDigits(a, String.begin);
-      var j = skipDigits(b, String.begin);
+      let x = new MarkWalk(a, marks);
+      let y = new MarkWalk(b, marks);
       var cases = 0;
       var codes = 0;
-      while (a.hasIndex(i) || b.hasIndex(j)) {
-        var x = -1;
-        if (a.hasIndex(i)) {
-          x = a[i];
-          i = skipDigits(a, a.next(i));
-        }
-        var y = -1;
-        if (b.hasIndex(j)) {
-          y = b[j];
-          j = skipDigits(b, b.next(j));
-        }
+      while (x.more || y.more) {
+        x.step();
+        y.step();
         if (marks) {
-          let diff = markWeight(x) - markWeight(y);
+          let diff = x.mark - y.mark;
           if (diff != 0) {
             return sign(diff);
           }
         }
         if (cased && cases == 0) {
-          cases = caseWeight(x, order) - caseWeight(y, order);
+          cases = caseWeight(x.letter, order) - caseWeight(y.letter, order);
         }
         if (coded && codes == 0) {
-          codes = codeWeight(x) - codeWeight(y);
+          codes = x.code - y.code;
         }
       }
       if (cases != 0) { sign(cases) } else { sign(codes) }
+    }
+
+Walks a string's characters other than digits for the last levels, one
+entry per step, with each entry's weights: a letter together with the
+combining marks after it that compose with it, as NFC composes them, so
+`e` and U+0301 weigh as `é` does; then each mark that doesn't compose, as
+its own entry, weighing as itself for accents and as nothing for case and
+code points. A letter written with marks also weighs 1 for code points,
+unless accents are ignored, so it comes after the same letter written as
+one code point, which keeps the order total. Once the string runs out,
+every weight is that of none. (Marks compose in the order written; NFC
+would first reorder marks of different combining classes, which is rare
+in practice.)
+
+    class MarkWalk(private text: String, private marks: Boolean) {
+      private var at: StringIndex = skipDigits(text, String.begin);
+      // Whether `at` is a mark that didn't compose with the letter before it.
+      private var leftover: Boolean = false;
+      // This entry's letter, for its case, or -1 for none.
+      public var letter: Int = -1;
+      public var mark: Int = 0;
+      public var code: Int = 0;
+
+      public get more(): Boolean { text.hasIndex(at) }
+
+      public step(): Void {
+        letter = -1;
+        mark = 0;
+        code = 0;
+        if (!text.hasIndex(at)) {
+          return;
+        }
+        let c = text[at];
+        at = text.next(at);
+        if (leftover) {
+          mark = c;
+        } else {
+          letter = c;
+          var composed = c;
+          var decomposed = false;
+          while (text.hasIndex(at) && isMark(text[at])) {
+            let next = compose(composed, text[at]);
+            if (next < 0) {
+              break;
+            }
+            composed = next;
+            decomposed = true;
+            at = text.next(at);
+          }
+          mark = markWeight(composed);
+          code = codeWeight(c, decomposed && marks);
+        }
+        leftover = text.hasIndex(at) && isMark(text[at]);
+        if (!leftover) {
+          at = skipDigits(text, at);
+        }
+      }
     }
 
 The accents weight of `c`, or of none (-1): 0 if it has no accent (its
@@ -400,10 +458,21 @@ uppercase.
 
 The code point weight of `c`, or of none (-1): 0 for most, but an [odd
 case](unicode.temper.md#odd-cases) like the Kelvin sign is itself, so
-it comes after `K`.
+it comes after `K`, and a letter written with combining marks
+(`decomposed`) is 1, so it comes after the same letter as one code point.
 
-    let codeWeight(c: Int): Int {
-      if (isOddCase(c)) { c } else { 0 }
+    let codeWeight(c: Int, decomposed: Boolean): Int {
+      if (isOddCase(c)) { c } else if (decomposed) { 1 } else { 0 }
+    }
+
+Past any combining marks at `start`.
+
+    let skipMarks(s: String, start: StringIndex): StringIndex {
+      var i = start;
+      while (s.hasIndex(i) && isMark(s[i])) {
+        i = s.next(i);
+      }
+      i
     }
 
     let skipDigits(s: String, start: StringIndex): StringIndex {
@@ -429,8 +498,8 @@ it comes after `K`.
 ## Tests
 
     let assertBefore(test: Test, a: String, b: String): Void {
-      assert(compareNatural(a, b) < 0) { "${a} not before ${b}" }
-      assert(compareNatural(b, a) > 0) { "${b} not after ${a}" }
+      assert(compareSmart(a, b) < 0) { "${a} not before ${b}" }
+      assert(compareSmart(b, a) > 0) { "${b} not after ${a}" }
     }
 
     let assertBeforeIn(test: Test, order: Order, a: String, b: String): Void {
@@ -480,7 +549,7 @@ it comes after `K`.
       assertBefore(test, "a", "A");
       assertBefore(test, "A", "b");
       assertBefore(test, "File2", "file10");
-      assert(compareNatural("Ab", "Ab") == 0);
+      assert(compareSmart("Ab", "Ab") == 0);
     }
 
     test("no accent before any accent") { test =>
@@ -554,9 +623,9 @@ it comes after `K`.
     }
 
     test("equal only when the same") { test =>
-      assert(compareNatural("", "") == 0);
-      assert(compareNatural("a10b", "a10b") == 0);
-      assert(compareNatural("é2", "é10") < 0);
+      assert(compareSmart("", "") == 0);
+      assert(compareSmart("a10b", "a10b") == 0);
+      assert(compareSmart("é2", "é10") < 0);
       // The Kelvin sign folds to k and is uppercase, as K is, so only the
       // code point tells them apart.
       assertBefore(test, "K", "\u{212A}");
@@ -590,7 +659,7 @@ it comes after `K`.
 
     test("sorting") { test =>
       let names = ["img12.png", "img10.png", "IMG2.png", "img1.png", "img2.png"];
-      let sorted = sortNatural(names);
+      let sorted = sortSmart(names);
       assert(sorted.join(" ") { s => s } == "img1.png img2.png IMG2.png img10.png img12.png");
       let firstCased = firstOrder.sort(names);
       assert(firstCased.join(" ") { s => s } == "img1.png img2.png img10.png img12.png IMG2.png");
@@ -624,6 +693,22 @@ it comes after `K`.
       assert(sorted.join(" ") { s => s } == "a b \u{E9} E e");
     }
 
+    test("decomposed text") { test =>
+      // A letter with combining marks sorts with its precomposed form, just after it.
+      assertBefore(test, "ecole", "\u{E9}cole");
+      assertBefore(test, "\u{E9}cole", "e\u{301}cole");
+      assertBefore(test, "e\u{301}cole", "fcole");
+      assertBefore(test, "u\u{308}\u{304}", "v"); // ǖ, two marks
+      assertBefore(test, "\u{1D6}", "u\u{308}\u{304}");
+      // A mark with no precomposed form still counts, after none.
+      assertBefore(test, "q", "q\u{301}");
+      assertBefore(test, "q\u{301}", "r");
+      // Ignoring accents or case, both forms are equal.
+      assert(accentlessOrder.compare("\u{E9}cole", "e\u{301}cole") == 0);
+      assert(accentlessOrder.compare("e\u{301}cole", "ecole") == 0);
+      assert(caselessOrder.compare("\u{C9}COLE", "e\u{301}cole") == 0);
+    }
+
     test("ignoring number forms") { test =>
       assert(formlessOrder.compare("x01", "x1") == 0);
       assert(formlessOrder.compare("x\u{661}", "x1") == 0); // Arabic-Indic 1
@@ -644,20 +729,23 @@ it comes after `K`.
         new Track("Track 2: Rise again", 30),
       ];
       var calls = 0;
-      let titles = sortNaturalByKey(tracks) { track =>
+      let titles = sortSmartByKey(tracks) { track =>
         calls += 1;
         track.title
       };
       assert(calls == 4);
       assert(titles.join(", ") { t => t.title } == "Track 1: Intro, track 2: Rise, Track 2: Rise again, Track 10: Outro");
-      let firstCased = sortNaturalByKey(tracks, fn (track: Track): String { track.title }, firstUpperOrder);
+      let firstCased = sortSmartByKey(tracks, fn (track: Track): String { track.title }, firstUpperOrder);
       assert(firstCased.join(", ") { t => t.title } == "Track 1: Intro, Track 2: Rise again, Track 10: Outro, track 2: Rise");
+      // The same as a method of an order, with a trailing block.
+      let byMethod = firstUpperOrder.sortByKey(tracks) { track => track.title };
+      assert(byMethod.join(", ") { t => t.title } == firstCased.join(", ") { t => t.title });
     }
 
 Equal keys keep their order.
 
     test("sorting by key is stable") {
       let tracks = [new Track("b", 1), new Track("a", 2), new Track("b", 3), new Track("a", 4)];
-      let sorted = sortNaturalByKey(tracks) { track => track.title };
+      let sorted = sortSmartByKey(tracks) { track => track.title };
       assert(sorted.join(" ") { t => t.seconds.toString() } == "2 4 1 3");
     }

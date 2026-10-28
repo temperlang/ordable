@@ -35,8 +35,9 @@ benchmark comparisons across backends.
 
 ASCII digits and zeros, Arabic-Indic and fullwidth digits, letters in
 both cases (including `ß`, `ẞ`, Greek sigmas, `α` and `ά`, and
-Cyrillic), odd forms (the Kelvin sign and `µ`, beside `K` and `Μ`), and a
-space, a dot, and a dash.
+Cyrillic), odd forms (the Kelvin sign and `µ`, beside `K` and `Μ`), a
+space, a dot, and a dash, and two combining marks (the acute accent and
+the diaeresis), which compose with some letters and not others.
 
     let alphabet: List<Int> = [
       char'0', char'0', char'1', char'2', char'9',
@@ -45,6 +46,7 @@ space, a dot, and a dash.
       0xE9, 0xC9, 0xDF, 0x1E9E, 0x3A3, 0x3C3, 0x3C2, 0x3B1, 0x3AC, 0x416, 0x436,
       char'K', 0x212A, 0x39C, 0xB5,
       char' ', char'.', char'-',
+      0x301, 0x308,
     ];
 
 With an option that ignores something, different strings can compare
@@ -100,7 +102,7 @@ and sorting gives one answer up to equal strings.
     }
 
     test("total order") { test =>
-      checkOrder(test, true) { a, b => compareNatural(a, b) };
+      checkOrder(test, true) { a, b => compareSmart(a, b) };
     }
 
     test("total order with each option") { test =>
