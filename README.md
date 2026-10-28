@@ -81,11 +81,12 @@ so a release that changes keys (a new Unicode version, say) will say so.
   (`ignoreAccents`, `Casing.ignored`, and `ignoreNumberForms`, which
   makes `01`, `1`, and `١` equal, as `Intl.Collator`'s numeric option
   does), with matching keys.
+- **Done:** `Order.sortByKey`, sorting any items by a string from each,
+  with an order's options.
 - **Done:** decomposed text: `e` plus a combining accent sorts as `é`,
   just after it.
 - **Next:** smarter punctuation, checked against real-world samples; and more
-  options: signed and decimal numbers; and a generic
-  `sortByKey` method on `Order` once Temper's C++ backend allows it.
+  options: signed and decimal numbers.
 - **A spec:** the source as a readable specification of the default
   order and every option, with its tests beside it, and comparison
   tables so people can choose well.

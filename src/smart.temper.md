@@ -41,34 +41,14 @@ Items with the same key keep their order. An `order` with
 [options](#options) changes the order.
 
     export let sortSmartByKey<T>(items: List<T>, key: fn (T): String, order: Order = smart): List<T> {
-      sortByKeys(items, items.map(key), order)
-    }
-
-Sorts positions by their keys, then picks the items in that order. Past
-a few items, it first makes each key's [smart sort key](key.temper.md),
-so each comparison is a plain string comparison instead of a smart
-one.
-
-    let sortByKeys<T>(items: List<T>, keys: List<String>, order: Order): List<T> {
-      let positions = new ListBuilder<Int>();
-      for (var i = 0; i < items.length; i += 1) {
-        positions.add(i);
-      }
-      let sorted = if (items.length < sortKeysFrom) {
-        positions.toList().sorted { a, b => compareWith(keys[a], keys[b], order) }
-      } else {
-        let smartKeys: List<String> = keys.map { k => keyWith(k, order) };
-        positions.toList().sorted { a, b => smartKeys[a] <=> smartKeys[b] }
-      };
-      sorted.map { i => items[i] }
+      order.sortByKey(items, key)
     }
 
 ## Options
 
-An `Order` is smart order with options, with `compare`, `sort`, and
-`key` as methods, and `sortSmartByKey` takes one too. (A generic
-`sortByKey` method would fit here, but Temper's C++ backend can't yet
-compile a generic method that calls a generic function, so it waits.) Every option has a default, so an object literal names only what
+An `Order` is smart order with options, with `compare`, `sort`,
+`sortByKey`, and `key` as methods, and `sortSmartByKey` takes one too.
+Every option has a default, so an object literal names only what
 changes, such as `{ upperFirst: true }`.
 
 The options answer two questions. First, how much case counts, from
@@ -132,10 +112,33 @@ The options, and the functions as methods:
       public compare(a: String, b: String): Int { compareWith(a, b, this) }
 
       public sort(strings: List<String>): List<String> {
-        sortByKeys(strings, strings, this)
+        sortedPositions(strings).map { i => strings[i] }
+      }
+
+      public sortByKey<T>(items: List<T>, key: fn (T): String): List<T> {
+        sortedPositions(items.map(key)).map { i => items[i] }
       }
 
       public key(s: String): String { keyWith(s, this) }
+
+Positions sorted by their keys, stably. Past a few items, it first
+makes each key's [smart sort key](key.temper.md), so each comparison is
+a plain string comparison instead of a smart one. (Generic methods call
+only methods like this one, not generic functions of this module, which
+Temper's C++ backend can't yet declare in time.)
+
+      private sortedPositions(keys: List<String>): List<Int> {
+        let positions = new ListBuilder<Int>();
+        for (var i = 0; i < keys.length; i += 1) {
+          positions.add(i);
+        }
+        if (keys.length < sortKeysFrom) {
+          positions.toList().sorted { a, b => compareWith(keys[a], keys[b], this) }
+        } else {
+          let smartKeys: List<String> = keys.map { k => keyWith(k, this) };
+          positions.toList().sorted { a, b => smartKeys[a] <=> smartKeys[b] }
+        }
+      }
     }
 
 The default order, behind the functions above.
@@ -734,6 +737,9 @@ Past any combining marks at `start`.
       assert(titles.join(", ") { t => t.title } == "Track 1: Intro, track 2: Rise, Track 2: Rise again, Track 10: Outro");
       let firstCased = sortSmartByKey(tracks, fn (track: Track): String { track.title }, firstUpperOrder);
       assert(firstCased.join(", ") { t => t.title } == "Track 1: Intro, Track 2: Rise again, Track 10: Outro, track 2: Rise");
+      // The same as a method of an order, with a trailing block.
+      let byMethod = firstUpperOrder.sortByKey(tracks) { track => track.title };
+      assert(byMethod.join(", ") { t => t.title } == firstCased.join(", ") { t => t.title });
     }
 
 Equal keys keep their order.
