@@ -35,7 +35,10 @@ base letter (`e`, then `é`, then `f`), as `Intl.Collator`,
 `natural-orderby`, and `natsort` (ignoring case) do, and matches `ß` with
 `ss`, as `Intl.Collator` and `natsort` do. Case now only breaks ties by
 default, lowercase first, as in `Intl.Collator`; putting case first, as
-plain sorting does, is an option.
+plain sorting does, is an option. And where ties are wanted, options can
+make them: ignoring case, accents, or number forms (`ignoreNumberForms`
+makes `01`, `1`, and `١` equal, as `Intl.Collator`'s numeric option
+does).
 
 ## Where others do things Ordable doesn't (yet)
 

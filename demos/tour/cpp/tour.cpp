@@ -94,6 +94,10 @@ int main() {
   auto loose = Order::make(Casing::ignored, false, true);  // snippet: equal
   std::cout << "ignoring accents and case, Café vs CAFE: " << order(loose->compare("Café", "CAFE")) << "\n";  // snippet: equal
   std::cout << "same key: " << (loose->key("Café") == loose->key("CAFE") ? "yes" : "no") << "\n";  // snippet: equal
+  // Or compare numbers by value alone, whatever their leading zeros or
+  // digit script.
+  auto byValue = Order::make(Casing::last, false, false, true);  // snippet: equal
+  std::cout << "ignoring number forms, file01 vs file1: " << order(byValue->compare("file01", "file1")) << "\n";  // snippet: equal
 
   section("4. Sorting your own types");
 

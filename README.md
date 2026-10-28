@@ -77,12 +77,12 @@ so a release that changes keys (a new Unicode version, say) will say so.
   (lowercase first), and an `Order` class for options (`casing` and
   `upperFirst`).
 - **Done:** options that let different strings compare equal
-  (`ignoreAccents` and `Casing.ignored`), with matching keys.
+  (`ignoreAccents`, `Casing.ignored`, and `ignoreNumberForms`, which
+  makes `01`, `1`, and `١` equal, as `Intl.Collator`'s numeric option
+  does), with matching keys.
 - **Next:** decomposed text (`e` plus a combining accent sorting as `é`);
   smarter punctuation, checked against real-world samples; and more
-  options: signed and decimal numbers; an option to make equivalent
-  numbers equal (ignoring leading zeros and digit scripts, so `01`,
-  `1`, and `١` tie), for matching `Intl.Collator`; and a generic
+  options: signed and decimal numbers; and a generic
   `sortByKey` method on `Order` once Temper's C++ backend allows it.
 - **A spec:** the source as a readable specification of the default
   order and every option, with its tests beside it, and comparison
@@ -93,6 +93,11 @@ so a release that changes keys (a new Unicode version, say) will say so.
 - **Done:** compact natural keys, usually about as long as their string:
   levels after the first only record what's unusual (accents, uppercase,
   leading zeros), so `file10`'s key is 8 code points.
+- **Quick tests, long runs on demand:** the property tests compare every
+  pair of generated strings, so `generatedCount` in
+  [src/properties.temper.md](src/properties.temper.md) keeps them quick;
+  raise it for a long run or a benchmark. Later, property testing and
+  benchmarks across backends could be built into Temper itself.
 - **Before 1.0:** be sure we love the natural key format, since stored
   keys depend on it.
 - **Before 1.0, decide the name:** keep "natural", the usual name for

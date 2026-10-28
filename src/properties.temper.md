@@ -10,6 +10,13 @@ in both cases and several scripts, and other characters.
 A small fixed generator keeps the strings the same in every backend and
 every run, and its numbers stay small enough to never overflow.
 
+How many strings each check generates. Checks compare every pair, so
+time grows with its square: 60 keeps the tests quick in every backend.
+Raise it (to 300 or more) for a long run before a release, or to
+benchmark comparisons across backends.
+
+    let generatedCount = 60;
+
     class Strings(private var state: Int) {
       public next(maxLength: Int): String {
         let builder = new StringBuilder();
@@ -47,7 +54,7 @@ and sorting gives one answer up to equal strings.
     let checkOrder(test: Test, total: Boolean, compare: fn (String, String): Int): Void {
       let gen = new Strings(1);
       let builder = new ListBuilder<String>();
-      for (var i = 0; i < 300; i += 1) {
+      for (var i = 0; i < generatedCount; i += 1) {
         builder.add(gen.next(6));
       }
       let strings = builder.toList();
@@ -70,7 +77,7 @@ and sorting gives one answer up to equal strings.
       for (var i = 0; i + 1 < sorted.length; i += 1) {
         assert(compare(sorted[i], sorted[i + 1]) <= 0) { "sort out of order at ${i.toString()}" }
       }
-      for (var k = 0; k < 3000; k += 1) {
+      for (var k = 0; k < generatedCount * 10; k += 1) {
         let a = strings[gen.pick(strings.length)];
         let b = strings[gen.pick(strings.length)];
         let c = strings[gen.pick(strings.length)];
@@ -106,4 +113,5 @@ and sorting gives one answer up to equal strings.
       checkOrder(test, false) { a, b => accentlessOrder.compare(a, b) };
       checkOrder(test, false) { a, b => caselessOrder.compare(a, b) };
       checkOrder(test, false) { a, b => baseOrder.compare(a, b) };
+      checkOrder(test, false) { a, b => formlessOrder.compare(a, b) };
     }

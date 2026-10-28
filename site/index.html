@@ -55,20 +55,22 @@
         own, until you shuffle.
       </p>
       <div id="samples" class="chips" role="group" aria-label="Sample lists"></div>
-      <div class="controls">
+      <div class="list-row">
         <button type="button" id="shuffle" class="pill shuffle"><span aria-hidden="true">⇄</span> Shuffle the input</button>
         <button type="button" id="edit-list" class="pill" aria-expanded="false" aria-controls="edit-box">Edit list</button>
+        <p class="input-line"><span class="input-label">Input:</span> <span id="input-order"></span></p>
+      </div>
+      <div id="edit-box" class="edit-box" hidden>
+        <label for="edit-text">One item per line</label>
+        <textarea id="edit-text" rows="8" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+      </div>
+      <div class="controls">
         <span class="options" id="options" role="group" aria-label="Ordable's options">
           <span class="options-label">Case</span>
           <span id="case-levels" class="segmented" role="group" aria-label="When case is considered"></span>
           <span id="switches" class="switches"></span>
         </span>
       </div>
-      <div id="edit-box" class="edit-box" hidden>
-        <label for="edit-text">One item per line</label>
-        <textarea id="edit-text" rows="8" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
-      </div>
-      <p class="input-line"><span class="input-label">Input:</span> <span id="input-order"></span></p>
       <div class="compare-with" role="group" aria-label="Compare Ordable with">
         <span>Compare with</span>
         <button type="button" class="pill" data-compare="plain" aria-pressed="true">Plain sort</button>

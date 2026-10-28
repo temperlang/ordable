@@ -49,7 +49,7 @@ const SPOTS = [
   {
     id: "equal",
     title: "Equal strings",
-    about: "`ignoreAccents` and `Casing.ignored` let different strings be equal, so Café equals CAFE, with equal keys, for matching or a unique index in a database. Equal strings keep their input order when sorting.",
+    about: "`ignoreAccents`, `Casing.ignored`, and `ignoreNumberForms` let different strings be equal, so Café equals CAFE, and file01 equals file1, with equal keys, for matching or a unique index in a database. Equal strings keep their input order when sorting.",
     target: () => find("#switch-ignoreAccents"),
   },
   {

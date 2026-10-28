@@ -54,6 +54,10 @@ console.log(`case first: ${caseFirst.sort(files).join(" ")}`);  // snippet: opti
 const loose = Order.new({ casing: Casing.ignored, ignoreAccents: true });  // snippet: equal
 console.log(`ignoring accents and case, Café vs CAFE: ${order(loose.compare("Café", "CAFE"))}`);  // snippet: equal
 console.log(`same key: ${loose.key("Café") === loose.key("CAFE") ? "yes" : "no"}`);  // snippet: equal
+// Or compare numbers by value alone, whatever their leading zeros or
+// digit script.
+const byValue = Order.new({ ignoreNumberForms: true });  // snippet: equal
+console.log(`ignoring number forms, file01 vs file1: ${order(byValue.compare("file01", "file1"))}`);  // snippet: equal
 
 section("4. Sorting your own types");
 

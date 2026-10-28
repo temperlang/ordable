@@ -66,6 +66,10 @@ print(f"case first: {' '.join(case_first.sort(files))}")  # snippet: options
 loose = Order(casing=Casing.ignored, ignore_accents=True)  # snippet: equal
 print(f"ignoring accents and case, Café vs CAFE: {order(loose.compare('Café', 'CAFE'))}")  # snippet: equal
 print(f"same key: {'yes' if loose.key('Café') == loose.key('CAFE') else 'no'}")  # snippet: equal
+# Or compare numbers by value alone, whatever their leading zeros or
+# digit script.
+by_value = Order(ignore_number_forms=True)  # snippet: equal
+print(f"ignoring number forms, file01 vs file1: {order(by_value.compare('file01', 'file1'))}")  # snippet: equal
 
 section("4. Sorting your own types")
 

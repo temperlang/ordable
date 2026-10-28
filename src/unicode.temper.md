@@ -190,7 +190,7 @@ entry, the first being its key, or -1 if there's none.
       assert(baseLetter(0x419) == 0x418); // Й to И
     }
 
-    test("full case folding") {
+    test("full folds of single code points") {
       let units = new ListBuilder<Int>();
       addFullFold(units, 0xDF); // ß
       addFullFold(units, 0x1E9E); // ẞ

@@ -27,8 +27,8 @@ checks that every language agrees.
 A key starts with a letter naming its options, so keys made with
 different options never pass for each other: `A` for the default, then
 plus 1 for `upperFirst` (unless case is ignored), plus 2 for
-`Casing.first`, plus 4 for `ignoreAccents`, and plus 8 for
-`Casing.ignored`. Then come the
+`Casing.first`, plus 4 for `ignoreAccents`, plus 8 for
+`Casing.ignored`, and plus 16 for `ignoreNumberForms`. Then come the
 levels of [the comparison](natural.temper.md) in turn, set apart by
 U+0001, which is below every other code point used:
 1. **Letters and numbers:** for each character other than a digit, its
@@ -46,8 +46,9 @@ U+0001, which is below every other code point used:
    if it's an odd form like the Kelvin sign.
 
 A level an option ignores is left empty (the case level with
-`Casing.first`, which has case in the first level), so strings that
-compare equal get the same key.
+`Casing.first`, which has case in the first level, and the leading zeros
+and scripts levels with `ignoreNumberForms`), so strings that compare
+equal get the same key.
 
 So the levels after the first hold numbers where 0 is usual, and the
 comparison reads a string that runs out as 0s. Then each level leaves
@@ -71,6 +72,7 @@ keeps them in order too.
 
     let keyWith(s: String, order: Order): String {
       let marked = !order.ignoreAccents;
+      let formed = !order.ignoreNumberForms;
       let first = casesFirst(order);
       let coded = !ignoresCase(order);
       let cased = coded && !first;
@@ -104,8 +106,10 @@ keeps them in order too.
             count += 1;
             at = s.next(at);
           }
-          zerosHeld = addWeight(zeros, zerosHeld, count);
-          scriptsHeld = addWeight(scripts, scriptsHeld, zero - char'0');
+          if (formed) {
+            zerosHeld = addWeight(zeros, zerosHeld, count);
+            scriptsHeld = addWeight(scripts, scriptsHeld, zero - char'0');
+          }
           appendCount(main, s.countBetween(at, digitsEnd(s, at, zero)));
           while (s.hasIndex(at) && isDigitOf(s[at], zero)) {
             appendCodePoint(main, char'0' + (s[at] - zero));
@@ -177,7 +181,8 @@ many 0s are held now.
         (if (order.upperFirst && !ignoresCase(order)) { 1 } else { 0 }) +
         (if (casesFirst(order)) { 2 } else { 0 }) +
         (if (order.ignoreAccents) { 4 } else { 0 }) +
-        (if (ignoresCase(order)) { 8 } else { 0 })
+        (if (ignoresCase(order)) { 8 } else { 0 }) +
+        (if (order.ignoreNumberForms) { 16 } else { 0 })
     }
 
     let appendCount(builder: StringBuilder, count: Int): Void {
@@ -214,7 +219,7 @@ with code points far past the separator's shift.
     ): Void {
       let gen = new Strings(2);
       let builder = new ListBuilder<String>();
-      for (var i = 0; i < 200; i += 1) {
+      for (var i = 0; i < generatedCount; i += 1) {
         builder.add(gen.next(6));
       }
       builder.add("\u{D7FB}");
@@ -243,7 +248,7 @@ with code points far past the separator's shift.
     }
 
     test("keys order as each option's compare") { test =>
-      for (let order of [upperOrder, firstOrder, firstUpperOrder, accentlessOrder, caselessOrder, baseOrder]) {
+      for (let order of [upperOrder, firstOrder, firstUpperOrder, accentlessOrder, caselessOrder, baseOrder, formlessOrder]) {
         checkKeys(test, fn (a: String, b: String): Int { order.compare(a, b) }, fn (s: String): String { order.key(s) });
       }
     }
@@ -291,6 +296,10 @@ Code points are in hexadecimal.
       assert(keyCodes(caselessOrder.key("\u{C9}")) == "49 68 1 1 1 ec");
       assert(keyCodes(new Order(Casing.ignored, true, false).key("\u{C9}")) == "49 68 1 1 1 ec");
       assert(keyCodes(baseOrder.key("\u{C9}T\u{C9}")) == keyCodes(baseOrder.key("ete")));
+      // Ignoring number forms leaves the leading zeros and scripts levels empty.
+      assert(keyCodes(naturalKey("x01")) == "41 7b 34 34 1 4");
+      assert(keyCodes(formlessOrder.key("x01")) == "51 7b 34 34");
+      assert(keyCodes(formlessOrder.key("x\u{661}")) == "51 7b 34 34");
       // Past U+D7FB: U+D7FF, then two digits in base 0x7F00 from U+0100.
       assert(keyCodes(naturalKey("\u{1F600}")) == "41 d7ff 102 2104");
     }

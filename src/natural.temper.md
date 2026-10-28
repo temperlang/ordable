@@ -88,9 +88,11 @@ least to most, which is when it's considered:
 lowercase one (and before characters without case) with `Casing.first`.
 
 Second, which strings are equal. By default, only the same string, but
-with `Casing.ignored` or `ignoreAccents` (`é` equals `e`, and `ß` equals
-`ss`, though leading zeros and digit scripts still count), different
-strings can compare equal. Their keys are then the same, so a database
+with `Casing.ignored`, `ignoreAccents` (`é` equals `e`, and `ß` equals
+`ss`), or `ignoreNumberForms` (numbers equal by value, whatever their
+leading zeros or digit script, so `01`, `1`, and `١` are equal, as with
+`Intl.Collator`'s numeric option), different strings can compare
+equal. Their keys are then the same, so a database
 can match them by key, and sorting keeps equal strings in their input
 order.
 
@@ -124,6 +126,7 @@ The options, and the functions as methods:
       public casing: Casing = Casing.last,
       public upperFirst: Boolean = false,
       public ignoreAccents: Boolean = false,
+      public ignoreNumberForms: Boolean = false,
     ) {
       public compare(a: String, b: String): Int { compareWith(a, b, this) }
 
@@ -136,7 +139,7 @@ The options, and the functions as methods:
 
 The default order, behind the functions above.
 
-    let natural: Order = new Order(Casing.last, false, false);
+    let natural: Order = new Order(Casing.last, false, false, false);
 
     let sortKeysFrom = 16;
 
@@ -174,8 +177,9 @@ With `Casing.first`, case is already in the first level, so the case
 level is left out.
 
 Two strings tie at every level only if they're the same, which keeps the
-order total ([order properties](properties.temper.md)). `ignoreAccents`
-skips the accents level, and `Casing.ignored` the last two.
+order total ([order properties](properties.temper.md)). `ignoreNumberForms`
+skips the leading zeros and digit scripts levels, `ignoreAccents` the
+accents level, and `Casing.ignored` the last two.
 
 Accents come from Unicode's canonical decompositions, and case folding
 is Unicode's ([unicode](unicode.temper.md)).
@@ -259,9 +263,9 @@ is Unicode's ([unicode](unicode.temper.md)).
         1
       } else if (restB >= 0 || b.hasIndex(j)) {
         -1
-      } else if (zeros != 0) {
+      } else if (zeros != 0 && !order.ignoreNumberForms) {
         sign(zeros)
-      } else if (scripts != 0) {
+      } else if (scripts != 0 && !order.ignoreNumberForms) {
         sign(scripts)
       } else {
         compareMarks(a, b, order)
@@ -440,6 +444,7 @@ it comes after `K`.
     let accentlessOrder: Order = { ignoreAccents: true };
     let caselessOrder: Order = { casing: Casing.ignored };
     let baseOrder: Order = { casing: Casing.ignored, ignoreAccents: true };
+    let formlessOrder: Order = { ignoreNumberForms: true };
 
     test("numbers compare by value") { test =>
       assertBefore(test, "file2", "file10");
@@ -617,6 +622,16 @@ it comes after `K`.
       // Equal strings keep their input order when sorting.
       let sorted = baseOrder.sort(["b", "\u{E9}", "E", "a", "e"]);
       assert(sorted.join(" ") { s => s } == "a b \u{E9} E e");
+    }
+
+    test("ignoring number forms") { test =>
+      assert(formlessOrder.compare("x01", "x1") == 0);
+      assert(formlessOrder.compare("x\u{661}", "x1") == 0); // Arabic-Indic 1
+      assert(formlessOrder.compare("\u{FF10}\u{FF12}", "2") == 0); // fullwidth 02
+      // Values still count, and so do case and accents.
+      assertBeforeIn(test, formlessOrder, "x2", "x010");
+      assertBeforeIn(test, formlessOrder, "x1", "X01");
+      assertBeforeIn(test, formlessOrder, "e01", "\u{E9}1");
     }
 
     class Track(public title: String, public seconds: Int) {}

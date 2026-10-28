@@ -261,6 +261,19 @@ ol.rows b {
   border-color: var(--accent);
 }
 
+.list-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 0.6rem;
+  margin-top: 1rem;
+}
+
+.list-row .input-line {
+  margin: 0;
+  flex: 1 1 18rem;
+}
+
 .controls {
   display: flex;
   flex-wrap: wrap;
@@ -274,7 +287,6 @@ ol.rows b {
 }
 
 .options-label {
-  margin-left: 0.5rem;
   color: var(--muted);
   font-size: 0.9rem;
 }

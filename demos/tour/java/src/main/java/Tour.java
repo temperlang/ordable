@@ -77,6 +77,10 @@ public class Tour {
         Order loose = new Order.Builder().casing(Casing.ignored).ignoreAccents(true).build();  // snippet: equal
         System.out.println("ignoring accents and case, Café vs CAFE: " + order(loose.compare("Café", "CAFE")));  // snippet: equal
         System.out.println("same key: " + (loose.key("Café").equals(loose.key("CAFE")) ? "yes" : "no"));  // snippet: equal
+        // Or compare numbers by value alone, whatever their leading zeros
+        // or digit script.
+        Order byValue = new Order.Builder().ignoreNumberForms(true).build();  // snippet: equal
+        System.out.println("ignoring number forms, file01 vs file1: " + order(byValue.compare("file01", "file1")));  // snippet: equal
 
         section("4. Sorting your own types");
 
