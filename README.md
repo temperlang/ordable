@@ -77,8 +77,9 @@ stored and sorted anywhere, such as a database column with `ORDER BY`:
   they're not for XML 1.0, which forbids them, nor for showing to
   people. They stay below U+D800 and never contain U+0000, so UTF-8,
   UTF-16, and code points all order them alike.
-- **Keys say what made them.** Each starts with `o`, for this key
-  format, and then a code point for the options that made it, so keys
+- **Keys say what made them.** Each starts with `0`, for this key
+  format (later formats count up from it), and then a code point for
+  the options that made it, so keys
   from other options or another format are easy to spot. Compare only
   keys made the same way.
 - **Keys don't change by accident:** every backend's tests check a
