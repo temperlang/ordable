@@ -6,7 +6,7 @@
     temper build -b js
     npm ci --prefix site
     uv run site/build.py
-    python3 -m http.server -d site/build
+    python3 -m http.server --bind 127.0.0.1 -d site/build
 
 Type-checks the page's JS with TypeScript, then bundles Temper's JS output
 for Ordable, with the parts of Temper's runtime it uses, into one minified

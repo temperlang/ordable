@@ -173,7 +173,7 @@ Build and preview the site, which uses the JS backend's output:
     temper build -b js
     npm ci --prefix site
     uv run site/build.py
-    python3 -m http.server -d site/build
+    python3 -m http.server --bind 127.0.0.1 -d site/build
 
 CI runs the tests and the tour on every backend for pull requests and
 pushes to `main`, using Temper's nightly `dev` build, and publishes the
