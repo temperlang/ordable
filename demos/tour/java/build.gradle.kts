@@ -23,4 +23,6 @@ tasks.withType<JavaCompile> {
 
 application {
     mainClass = "Tour"
+    // Print UTF-8 whatever the locale, for the tour's non-ASCII names.
+    applicationDefaultJvmArgs = listOf("-Dstdout.encoding=UTF-8")
 }
