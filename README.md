@@ -179,3 +179,7 @@ CI runs the tests and the tour on every backend for pull requests and
 pushes to `main`, using Temper's nightly `dev` build, and publishes the
 site from `main`. Source files in `src/`
 are literate Markdown, with tests next to the code they cover.
+
+## License
+
+Apache-2.0 OR MIT, at your option, as Temper is; see [COPYRIGHT](COPYRIGHT). Third-party material, with its notices, is in [NOTICE](NOTICE).
