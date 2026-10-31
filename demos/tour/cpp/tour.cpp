@@ -42,9 +42,6 @@ struct Track {
 };
 
 int main() {
-  // Sets up Ordable's tables. Call it once before anything else.
-  ordable::global_init_init();
-
   std::cout << "# Ordable tour\n";
 
   section("1. Comparing");
@@ -85,18 +82,18 @@ int main() {
 
   // An Order has the same functions as methods, with options: here
   // uppercase first, then case first.
-  auto upperFirst = Order::make(Casing::last, true);  // snippet: options
+  auto upperFirst = Order::make(Casing::last(), true);  // snippet: options
   std::cout << "uppercase first: " << join(*upperFirst->sort(files)) << "\n";  // snippet: options
-  auto caseFirst = Order::make(Casing::first);  // snippet: options
+  auto caseFirst = Order::make(Casing::first());  // snippet: options
   std::cout << "case first: " << join(*caseFirst->sort(files)) << "\n";  // snippet: options
   // Or let different strings be equal, here ignoring accents and case,
   // with equal keys too.
-  auto loose = Order::make(Casing::ignored, false, true);  // snippet: equal
+  auto loose = Order::make(Casing::ignored(), false, true);  // snippet: equal
   std::cout << "ignoring accents and case, Café vs CAFE: " << order(loose->compare("Café", "CAFE")) << "\n";  // snippet: equal
   std::cout << "same key: " << (loose->key("Café") == loose->key("CAFE") ? "yes" : "no") << "\n";  // snippet: equal
   // Or compare numbers by value alone, whatever their leading zeros or
   // digit script.
-  auto byValue = Order::make(Casing::last, false, false, true);  // snippet: equal
+  auto byValue = Order::make(Casing::last(), false, false, true);  // snippet: equal
   std::cout << "ignoring number forms, file01 vs file1: " << order(byValue->compare("file01", "file1")) << "\n";  // snippet: equal
 
   section("4. Sorting your own types");
@@ -119,7 +116,7 @@ int main() {
     titles.push_back(track.title);
   }
   std::cout << "with the language's own sort: " << join(titles, ", ") << "\n";
-  auto byMethod = Order::make(Casing::last, true)->sortByKey<Track>(tracks, [](Track const &track) { return track.title; });  // snippet: by-key
+  auto byMethod = Order::make(Casing::last(), true)->sortByKey<Track>(tracks, [](Track const &track) { return track.title; });  // snippet: by-key
   std::vector<std::string> methodTitles;
   for (auto const &track : *byMethod) {
     methodTitles.push_back(track.title);

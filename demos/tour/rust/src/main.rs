@@ -32,9 +32,6 @@ struct Track {
 }
 
 fn main() {
-    // Sets up Ordable's tables. Call it once before anything else.
-    ordable::init(None).expect("ordable::init");
-
     println!("# Ordable tour");
 
     section("1. Comparing");

@@ -24,8 +24,8 @@ Simple case folding (Unicode's `CaseFolding.txt`, statuses C and S), as
 delta. The code points `start`, `start + stride`, and so on, `count` of
 them, each fold to themselves plus `delta`. Runs are in order and don't
 overlap, and every code point not in one folds to itself. It's built a
-few rows at a time, since one big list literal is too many arguments for
-some backends (Lua).
+few rows at a time: C++ can't compile a list literal of about 900
+numbers or more, and Java and C# do better with small initializers.
 
     let foldRuns: List<Int> = buildFoldRuns();
 

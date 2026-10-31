@@ -80,6 +80,7 @@ order.
 How much case counts. The constructor is private, so these three are
 all there are.
 
+    @auto("==")
     export class Casing {
       public name: String;
 
@@ -88,9 +89,6 @@ all there are.
       }
 
       public toString(): String { name }
-
-      @operator("==")
-      public eq(other: Casing): Boolean { name == other.name }
 
       public static ignored = new Casing("ignored");
       public static last = new Casing("last");
@@ -123,9 +121,9 @@ The options, and the functions as methods:
 
 Positions sorted by their keys, stably. Past a few items, it first
 makes each key's [smart sort key](key.temper.md), so each comparison is
-a plain string comparison instead of a smart one. (Generic methods call
-only methods like this one, not generic functions of this module, which
-Temper's C++ backend can't yet declare in time.)
+a plain string comparison instead of a smart one. (It's a method because
+Temper's C++ backend declares plain module functions too late for
+generic methods, like `sortByKey`, to call them.)
 
       private sortedPositions(keys: List<String>): List<Int> {
         let positions = new ListBuilder<Int>();
