@@ -19,12 +19,15 @@ using ordable::smartKey;
 using ordable::sortSmart;
 using ordable::sortSmartByKey;
 
-// Ordable takes lists as shared vectors.
-std::shared_ptr<std::vector<std::string>> list(std::initializer_list<std::string> values) {
-  return std::make_shared<std::vector<std::string>>(values);
+using temper::core::Str;
+
+// Ordable takes lists as shared vectors of Temper's strings, temper::core::Str,
+// which convert to and from std::string.
+std::shared_ptr<std::vector<Str>> list(std::initializer_list<Str> values) {
+  return std::make_shared<std::vector<Str>>(values);
 }
 
-std::string join(std::vector<std::string> const &strings, std::string const &sep = " ") {
+std::string join(std::vector<Str> const &strings, std::string const &sep = " ") {
   std::string out;
   for (size_t i = 0; i < strings.size(); i++) {
     out += (i ? sep : "") + strings[i];
@@ -111,13 +114,13 @@ int main() {
   std::vector<Track> own = *tracks;
   std::stable_sort(own.begin(), own.end(),
                    [](Track const &a, Track const &b) { return compareSmart(a.title, b.title) < 0; });
-  std::vector<std::string> titles;
+  std::vector<Str> titles;
   for (auto const &track : own) {
     titles.push_back(track.title);
   }
   std::cout << "with the language's own sort: " << join(titles, ", ") << "\n";
   auto byMethod = Order::make(Casing::last(), true)->sortByKey<Track>(tracks, [](Track const &track) { return track.title; });  // snippet: by-key
-  std::vector<std::string> methodTitles;
+  std::vector<Str> methodTitles;
   for (auto const &track : *byMethod) {
     methodTitles.push_back(track.title);
   }
